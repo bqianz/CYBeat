@@ -117,23 +117,23 @@ int main(int, char**)
 			}
 			if (e.type == SDL_KEYDOWN) {
 				switch (e.key.keysym.sym) {
-					case SDLK_1:
-						currentClip = 0;
-						break;
-					case SDLK_2:
-						currentClip = 1;
-						break;
-					case SDLK_3:
-						currentClip = 2;
-						break;
-					case SDLK_4:
-						currentClip = 3;
-						break;
-					case SDLK_ESCAPE:
-						quit = true;
-						break;
-					default:
-						break; // if generic key pressed, nothing happens
+				case SDLK_1:
+					currentClip = 0;
+					break;
+				case SDLK_2:
+					currentClip = 1;
+					break;
+				case SDLK_3:
+					currentClip = 2;
+					break;
+				case SDLK_4:
+					currentClip = 3;
+					break;
+				case SDLK_ESCAPE:
+					quit = true;
+					break;
+				default:
+					break; // if generic key pressed, nothing happens
 
 				}
 			}
