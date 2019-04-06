@@ -4,19 +4,15 @@
 
 int main(int, char**)
 {
-	if ((IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG) != IMG_INIT_PNG) {
-		std::cout << "SDL_Init Error: " << SDL_GetError() << std::endl;
-		return 1;
-	}
-
-	SDL_Window* window = SDL_CreateWindow("Lesson 3", 100, 100, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
+	// make window
+	SDL_Window* window = SDL_CreateWindow("CYBeat", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
 	if (window == nullptr) {
 		logSDLError(std::cout, "CreateWindow");
 		SDL_Quit();
 		return 1;
 	}
 
-	SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+	SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC); // vsync: refreshes at same rate as monitor
 	if (renderer == nullptr) {
 		logSDLError(std::cout, "CreateRenderer");
 		cleanup(window);
@@ -24,8 +20,39 @@ int main(int, char**)
 		return 1;
 	}
 
-	const std::string resPath = getResourcePath("Lesson5");
-	SDL_Texture *image = loadTexture(resPath + "image.png", renderer);
+	// background colour
+	if (!SDL_SetRenderDrawColor(renderer, bg_r, bg_g, bg_b, bg_a)) {
+		logSDLError(std::cout, "SetRenderDrawColor");
+		cleanup(window, renderer);
+		SDL_Quit();
+		IMG_Quit();
+		return 1;
+	}
+	// log error here
+
+	
+	// goal line
+	SDL_Rect goal_rect;
+	goal_rect.x = 0;
+	goal_rect.y = SCREEN_HEIGHT * 5 / 6;
+	goal_rect.w = SCREEN_WIDTH;
+	goal_rect.h = SCREEN_HEIGHT / 20;
+
+	if (!SDL_RenderDrawRect(renderer, &goal_rect)) {
+		logSDLError(std::cout, "RenderDrawRect");
+		cleanup(window, renderer);
+		SDL_Quit();
+		IMG_Quit();
+		return 1;
+	}
+
+
+
+
+
+
+	const std::string resPath = getResourcePath("YCY");
+	SDL_Texture* image = loadTexture(resPath + "image.png", renderer);
 	//Make sure image loaded
 	if (image == nullptr) {
 		cleanup(image, renderer, window);
@@ -33,6 +60,9 @@ int main(int, char**)
 		SDL_Quit();
 		return 1;
 	}
+
+
+
 
 
 	//clip
@@ -84,7 +114,7 @@ int main(int, char**)
 			}
 		}
 		SDL_RenderClear(renderer); // encouraged for code reusability
-		renderTexture(image, renderer, x, y, &image_clips[currentClip]);
+		// renderTexture(image, renderer, x, y, &image_clips[currentClip]);
 		SDL_RenderPresent(renderer);
 	}
 

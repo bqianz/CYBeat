@@ -10,7 +10,7 @@
 @param os: the output stream to write the message to
 @param msg: the error message to write
 */
-void logSDLError(std::ostream &os, const std::string& msg) {
+void logSDLError(std::ostream& os, const std::string& msg) {
 	os << msg << " error: " << SDL_GetError() << std::endl;
 }
 
