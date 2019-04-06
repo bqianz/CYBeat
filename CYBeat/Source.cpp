@@ -1,61 +1,6 @@
-#include <iostream>
-#include <string>
-#include <SDL.h>
-#include "cleanup.h"
-#include "res_path.h"
-#include "SDL_image.h"
-
-const int SCREEN_WIDTH = 640;
-const int SCREEN_HEIGHT = 480;
-
-/*
-@param os: the output stream to write the message to
-@param msg: the error message to write
-*/
-void logSDLError(std::ostream &os, const std::string& msg) {
-	os << msg << " error: " << SDL_GetError() << std::endl;
-}
-
-/* TEXTURE LOADING FUNCTION: image to texture
-image -> SDL_LoadBMP() -> SDL_Surface -> SDL_CreateTextureFromSurface() - > SDL_Texture
-@param filepath: the bmp image file to load
-@param ren the renderer to load the texture onto
-*/
-SDL_Texture* loadTexture(const std::string& filepath, SDL_Renderer* ren) {
-	SDL_Texture* texture = IMG_LoadTexture(ren, filepath.c_str());
-	if (texture == nullptr) {
-		logSDLError(std::cout, "LoadTexture");
-	}
-	return texture;
-}
-
-//void renderTexture(SDL_Texture* texture, SDL_Renderer* ren, int x, int y, int w, int h) {
-//	SDL_Rect rect;
-//	rect.x = x;
-//	rect.y = y;
-//	rect.w = w;
-//	rect.h = h;
-//	SDL_RenderCopy(ren, texture, NULL, &rect);
-//  }
-
-void renderTexture(SDL_Texture* tex, SDL_Renderer* ren, SDL_Rect rect, SDL_Rect* clip = nullptr) {
-	SDL_RenderCopy(ren, tex, clip, &rect);
-}
-
-void renderTexture(SDL_Texture* texture, SDL_Renderer* ren, int x, int y, SDL_Rect* clip = nullptr) {
-	SDL_Rect dst;
-	dst.x = x;
-	dst.y = y;
-	if (clip != nullptr) {
-		dst.w = clip->w;
-		dst.h = clip->h;
-	}
-	else {
-		SDL_QueryTexture(texture, NULL, NULL, &dst.w, &dst.h);
-	}
-	renderTexture(texture, ren, dst, clip);
-}
-
+#include "functions.h"
+#include "render_functions.h"
+#include "constants.h"
 
 int main(int, char**)
 {

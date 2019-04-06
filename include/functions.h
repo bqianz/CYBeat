@@ -85,7 +85,7 @@ std::string getResourcePath(const std::string& subDir = "") {
 			std::cerr << "Error getting resource path: " << SDL_GetError() << std::endl;
 			return "";
 		}
-		size_t pos = baseRes.rfind("Lesson");
+		size_t pos = baseRes.rfind("Debug");
 		baseRes = baseRes.substr(0, pos) + "res" + PATH_SEP;
 
 
