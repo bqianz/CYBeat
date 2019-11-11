@@ -1,23 +1,26 @@
-CXX = g++
-# Update these paths as necessary to match your installation
-SDL_LIB = -LC:/SDL2-2.0.10/i686-w64-mingw32/lib -lSDL2main -lSDL2 -lSDL2_image
-SDL_INCLUDE = -IC:/SDL2-2.0.10/i686-w64-mingw32/include
-# If your compiler is a bit older you may need to change -std=c++11 to -std=c++0x
-CXXFLAGS = -Wall -c -std=c++11 $(SDL_INCLUDE)
-LDFLAGS = -lmingw32 -mwindows -mconsole $(SDL_LIB)
-EXE = main.exe
+#OBJS specifies which files to compile as part of the project
+OBJS = main.cpp
 
-all: $(EXE)
+#CC specifies which compiler we're using
+CC = g++
 
+#INCLUDE_PATHS specifies the additional include paths we'll need
+INCLUDE_PATHS = -IC:\mingw_dev_lib\include\SDL2
 
-$(EXE): main.o
+#LIBRARY_PATHS specifies the additional library paths we'll need
+LIBRARY_PATHS = -LC:\mingw_dev_lib\lib
 
-	$(CXX) $< $(LDFLAGS) -o $@
+#COMPILER_FLAGS specifies the additional compilation options we're using
+# -w suppresses all warnings
+# -Wl,-subsystem,windows gets rid of the console window
+COMPILER_FLAGS = -w -Wl,-subsystem,windows
 
-main.o: main.cpp
+#LINKER_FLAGS specifies the libraries we're linking against
+LINKER_FLAGS = -lmingw32 -lSDL2main -lSDL2 -lSDL2_image
 
-	$(CXX) $(CXXFLAGS) $< -o $@
+#OBJ_NAME specifies the name of our exectuable
+OBJ_NAME = main
 
-clean:
-
-	rm *.o && rm $(EXE)
+#This is the target that compiles our executable
+all : $(OBJS)
+	$(CC) $(OBJS) $(INCLUDE_PATHS) $(LIBRARY_PATHS) $(COMPILER_FLAGS) $(LINKER_FLAGS) -o $(OBJ_NAME)

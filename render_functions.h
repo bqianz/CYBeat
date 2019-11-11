@@ -1,7 +1,7 @@
 #ifndef RENDERFUNCTIONS_H
 #define RENDERFUNCTIONS_H
 
-#include <SDL2/SDL_image.h>
+#include <SDL_image.h>
 
 /* TEXTURE LOADING FUNCTION: image to texture
 image -> SDL_LoadBMP() -> SDL_Surface -> SDL_CreateTextureFromSurface() - > SDL_Texture

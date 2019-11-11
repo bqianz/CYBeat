@@ -4,7 +4,6 @@
 
 
 void D_pressed() {
-
 }
 int main(int, char**)
 {
@@ -45,9 +44,11 @@ int main(int, char**)
 
 	// buttons
 
+	// change
 	// load button images
 	SDL_Texture* bt_images[col_num];
-	const std::string resPath = getResourcePath("YCY");
+	const std::string resPath = getResourcePath();
+	// std:: string resPath = "res\\YCY\\";
 	for (int i = 0; i < col_num; i++) {
 		bt_images[i] = loadTexture(resPath + "button" + std::to_string(i) + ".png", renderer);
 		if (bt_images[i] == nullptr) {
@@ -110,6 +111,7 @@ int main(int, char**)
 				}
 			}
 		}
+		//change
 		// background
 		SDL_SetRenderDrawColor(renderer, bg_r, bg_g, bg_b, bg_a);
 		SDL_RenderClear(renderer); // encouraged for code reusability
@@ -167,5 +169,6 @@ int main(int, char**)
 	}
 	IMG_Quit();
 	SDL_Quit();
+
 	return 0;
 }

@@ -2,7 +2,7 @@
 #define FUNCTIONS_H
 
 #include <utility>
-#include  <SDL2/SDL.h>
+#include <SDL.h>
 #include <iostream>
 #include <string>
 
@@ -75,7 +75,8 @@ std::string getResourcePath(const std::string& subDir = "") {
 	const char PATH_SEP = '/';
 #endif
 
-	static std::string baseRes; //space for the static variable is allocated only once and the value of variable in the previous call gets carried through the next function call
+	static std::string baseRes; 
+	//space for the static variable is allocated only once and the value of variable in the previous call gets carried through the next function call
 	if (baseRes.empty()) {
 		char* basePath = SDL_GetBasePath();
 		if (basePath) {
@@ -86,8 +87,8 @@ std::string getResourcePath(const std::string& subDir = "") {
 			std::cerr << "Error getting resource path: " << SDL_GetError() << std::endl;
 			return "";
 		}
-		size_t pos = baseRes.rfind("Debug");
-		baseRes = baseRes.substr(0, pos) + "res" + PATH_SEP;
+		// size_t pos = baseRes.rfind("Debug");
+		baseRes = baseRes + "res" + PATH_SEP;
 
 
 	}
