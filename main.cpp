@@ -2,9 +2,56 @@
 #include "render_functions.h"
 #include "constants.h"
 
+#include <SDL_ttf.h>
+#include <stdio.h>
+#include <sstream>
 
-void D_pressed() {
-}
+
+class LTexture
+{
+	public:
+		//Initializes variables
+		LTexture();
+
+		//Deallocates memory
+		~LTexture();
+
+		//Loads image at specified path
+		bool loadFromFile( std::string path );
+		
+		// #if defined(_SDL_TTF_H) || defined(SDL_TTF_H)
+		//Creates image from font string
+		bool loadFromRenderedText( std::string textureText, SDL_Color textColor );
+		// #endif
+
+		//Deallocates texture
+		void free();
+
+		//Set color modulation
+		void setColor( Uint8 red, Uint8 green, Uint8 blue );
+
+		//Set blending
+		void setBlendMode( SDL_BlendMode blending );
+
+		//Set alpha modulation
+		void setAlpha( Uint8 alpha );
+		
+		//Renders texture at given point
+		void render( int x, int y, SDL_Rect* clip = NULL, double angle = 0.0, SDL_Point* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE );
+
+		//Gets image dimensions
+		int getWidth();
+		int getHeight();
+
+	private:
+		//The actual hardware texture
+		SDL_Texture* mTexture;
+
+		//Image dimensions
+		int mWidth;
+		int mHeight;
+};
+
 int main(int, char**)
 {
 	// make window
@@ -90,24 +137,41 @@ int main(int, char**)
 		short_rect[i].h = short_rect[i].w;
 	}
 
+	LTexture gTimeTextTexture;
 
-
-
+	// main loop flag
 	bool quit = false;
+
+	// event handler
 	SDL_Event e;
+
+	// unsigned integer 32bit type for protability across platforms
+	Uint32 startTime = 0;
+
+	// like iostreams but instead of writing to the console, we can read and write to string in memory
+	std::stringstream timeio;
+
+	SDL_Color textColor = { 0, 0, 0, 255 };
+
+	// while application is running
 	while (!quit) {
+
+		// handle events on queue
 		while (SDL_PollEvent(&e)) {
 			if (e.type == SDL_QUIT) {
 				quit = true;
 			}
-			if (e.type == SDL_KEYDOWN) {
-				switch (e.key.keysym.sym) {
-				case SDLK_ESCAPE:
-					quit = true;
-					break;
-				default:
-					break; // if generic key pressed, nothing happens
 
+			else if (e.type == SDL_KEYDOWN) {
+				switch (e.key.keysym.sym) {
+					case SDLK_ESCAPE:
+						quit = true;
+						break;
+					case SDLK_RETURN:
+						startTime = SDL_GetTicks();
+						break;
+					default:
+						break; // if generic key pressed, nothing happens
 				}
 			}
 		}
@@ -157,6 +221,19 @@ int main(int, char**)
 			renderTexture(short_images[3], renderer, short_rect[3]);
 		}
 
+		// set text to be rendered
+		timeio.str("");
+		timeio << "Milliseconds since start time " << SDL_GetTicks() - startTime;
+
+		//Render text
+		if( !gTimeTextTexture.loadFromRenderedText( timeio.str().c_str(), textColor ) )
+		{
+			printf( "Unable to render time texture!\n" );
+		}
+
+		//Render textures
+		gTimeTextTexture.render( 0, 0 );
+
 		SDL_RenderPresent(renderer);
 	}
 
@@ -167,6 +244,8 @@ int main(int, char**)
 		cleanup(bt_images[i]);
 		cleanup(short_images[i]);
 	}
+
+	gTimeTextTexture.free();
 	IMG_Quit();
 	SDL_Quit();
 
