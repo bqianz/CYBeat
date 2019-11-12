@@ -67,8 +67,8 @@ inline void cleanup<SDL_Surface>(SDL_Surface* surf) {
 
 // RES_PATH
 
-std::string getResourcePath(const std::string& subDir = "") {
-
+std::string getResourcePath(const std::string& subDir = "")
+{
 #ifdef _WIN32
 	const char PATH_SEP = '\\';
 #else
