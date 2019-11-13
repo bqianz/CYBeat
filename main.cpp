@@ -2,6 +2,7 @@
 #include "render_functions.h"
 #include "constants.h"
 #include "ltexture.h"
+#include "ltimer.h"
 
 #include <sstream>
 #include <SDL.h>
@@ -11,24 +12,11 @@
 #include <string>
 #include <cmath>
 
-#ifdef _WIN32
-	const char PATH_SEP = '\\';
-#else
-	const char PATH_SEP = '/';
-#endif
-
 //The window we'll be rendering to
 SDL_Window* window = NULL;
 
 //The window renderer
 SDL_Renderer* renderer = NULL;
-
-//Globally used font
-TTF_Font* font = NULL;
-
-//Text textures
-LTexture gTimeTextTexture;
-LTexture gPromptTextTexture;
 
 // goal line
 SDL_Rect goal_rect;
@@ -47,6 +35,19 @@ SDL_Texture* short_images[col_num];
 
 // short press button rectangles
 SDL_Rect short_rect[col_num];
+
+//Globally used font
+TTF_Font* font = NULL;
+
+//Text textures
+LTexture gTimeTextTexture;
+LTexture gPromptTextTexture;
+
+//The application timer
+LTimer timer;
+
+// like iostreams but instead of writing to the console, we can read and write to string in memory
+std::stringstream timeio;
 
 bool LTexture::loadFromRenderedText( std::string textureText, SDL_Color textColor )
 {
@@ -264,7 +265,7 @@ bool loadFont()
 		SDL_Color textColor = { 0, 0, 0, 255 };
 		
 		//Load prompt texture
-		if( !gPromptTextTexture.loadFromRenderedText( "Press Enter to Reset Start Time.", textColor ) )
+		if( !gPromptTextTexture.loadFromRenderedText( "Press S or P", textColor ) )
 		{
 			printf( "Unable to render prompt texture!\n" );
 			success = false;
@@ -290,7 +291,6 @@ void close(){
 		cleanup(short_images[i]);
 	}
 
-	// gTimeTextTexture.free();
 	TTF_Quit();
 	IMG_Quit();
 	SDL_Quit();
@@ -320,10 +320,6 @@ int main(int, char**)
 		SDL_Event e;
 
 		// unsigned integer 32bit type for protability across platforms
-		Uint32 startTime = 0;
-
-		// like iostreams but instead of writing to the console, we can read and write to string in memory
-		std::stringstream timeio;
 
 		SDL_Color textColor = { 0, 0, 0, 255 };
 
@@ -338,12 +334,39 @@ int main(int, char**)
 
 				else if (e.type == SDL_KEYDOWN) {
 					switch (e.key.keysym.sym) {
+						
+						//quit
 						case SDLK_ESCAPE:
 							quit = true;
 							break;
-						case SDLK_RETURN:
-							startTime = SDL_GetTicks();
+						
+						//start stop
+						case SDLK_s:
+						{
+							if(timer.isStarted())
+							{
+								timer.stop();
+							}
+							else
+							{
+								timer.start();
+							}
 							break;
+						}
+
+						// pause unpause
+						case SDLK_p:
+						{
+							if(timer.isPaused())
+							{
+								timer.unpause();
+							}
+							else
+							{
+								timer.pause();
+							}
+							break;
+						}
 						default:
 							break; // if generic key pressed, nothing happens
 					}
@@ -351,7 +374,7 @@ int main(int, char**)
 			}
 
 
-			// redraw everything starting from background
+			// draw everything starting from background
 			SDL_SetRenderDrawColor(renderer, bg_r, bg_g, bg_b, bg_a);
 			SDL_RenderClear(renderer); // encouraged for code reusability
 			
@@ -378,6 +401,7 @@ int main(int, char**)
 			for (int i = 0; i < col_num; i++) {
 				renderTexture(bt_images[i], renderer, bt_rect[i]);
 			}
+
 			const Uint8* currentKeyStates = SDL_GetKeyboardState(NULL);
 			if (currentKeyStates[SDL_SCANCODE_D])
 			{
@@ -398,7 +422,7 @@ int main(int, char**)
 
 			// set text
 			timeio.str("");
-			timeio << "Time record: " << SDL_GetTicks() - startTime;
+			timeio << "Seconds: " << (timer.getTicks()/1000.f);
 
 			// text to texture
 			if( !gTimeTextTexture.loadFromRenderedText( timeio.str().c_str(), textColor ) )
