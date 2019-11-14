@@ -3,6 +3,7 @@
 #include "constants.h"
 #include "ltexture.h"
 #include "ltimer.h"
+#include "note.h"
 
 #include <sstream>
 #include <SDL.h>
@@ -48,6 +49,10 @@ LTimer timer;
 
 // like iostreams but instead of writing to the console, we can read and write to string in memory
 std::stringstream timeio;
+
+Note note1;
+
+Uint32 current_time;
 
 bool LTexture::loadFromRenderedText( std::string textureText, SDL_Color textColor )
 {
@@ -286,6 +291,7 @@ void close(){
 	cleanup(renderer, window);
 
 	// destroy button textures
+	// don't have to destory rectangles i think? only textures
 	for (int i = 0; i < col_num; i++) {
 		cleanup(bt_images[i]);
 		cleanup(short_images[i]);
@@ -332,6 +338,7 @@ int main(int, char**)
 					quit = true;
 				}
 
+				// keys that don't happen at the same time
 				else if (e.type == SDL_KEYDOWN) {
 					switch (e.key.keysym.sym) {
 						
@@ -378,18 +385,20 @@ int main(int, char**)
 			SDL_SetRenderDrawColor(renderer, bg_r, bg_g, bg_b, bg_a);
 			SDL_RenderClear(renderer); // encouraged for code reusability
 			
-			// lines
+			// goal line
 			SDL_SetRenderDrawColor(renderer, bd_r, bd_g, bd_b, bd_a);
 			if (SDL_RenderFillRect(renderer, &goal_rect)) {
-				logSDLError(std::cout, "RenderFillRect");
+				logSDLError(std::cout, "RenderFillRect goal_rect");
 				cleanup(window, renderer);
 				SDL_Quit();
 				IMG_Quit();
 				return 1;
 			}
+
+			// 
 			for (int i = 0; i < line_num; i++) {
 				if (SDL_RenderFillRect(renderer, &vt[i])) {
-					logSDLError(std::cout, "RenderFillRect");
+					logSDLError(std::cout, "RenderFillRect vt");
 					cleanup(window, renderer);
 					SDL_Quit();
 					IMG_Quit();
@@ -397,39 +406,42 @@ int main(int, char**)
 				}
 			}
 
-			// buttons
-			for (int i = 0; i < col_num; i++) {
-				renderTexture(bt_images[i], renderer, bt_rect[i]);
-			}
-
-			const Uint8* currentKeyStates = SDL_GetKeyboardState(NULL);
-			if (currentKeyStates[SDL_SCANCODE_D])
-			{
-				renderTexture(short_images[0], renderer, short_rect[0]);
-			}
-			if (currentKeyStates[SDL_SCANCODE_F])
-			{
-				renderTexture(short_images[1], renderer, short_rect[1]);
-			}
-			if (currentKeyStates[SDL_SCANCODE_J])
-			{
-				renderTexture(short_images[2], renderer, short_rect[2]);
-			}
-			if (currentKeyStates[SDL_SCANCODE_K])
-			{
-				renderTexture(short_images[3], renderer, short_rect[3]);
-			}
 
 			// set text
+			current_time = timer.get_current_time();
+
 			timeio.str("");
-			timeio << "Seconds: " << (timer.getTicks()/1000.f);
+			timeio << "Seconds: " << (current_time/1000.f);
+
+			// notes
+			if (note1.is_showing(current_time))
+			{
+				note1.render(current_time, renderer);
+			}
+
+			// buttons
+
+			const Uint8* currentKeyStates = SDL_GetKeyboardState(NULL); 
+			// arguments gets the number of keys available?
+
+			const int key_indices[4]= {SDL_SCANCODE_D, SDL_SCANCODE_F,SDL_SCANCODE_J,SDL_SCANCODE_K};
+
+			for (int i = 0; i < col_num; i++){
+				if (currentKeyStates[key_indices[i]])
+				{
+					renderTexture(short_images[i], renderer, short_rect[i]);
+				}
+				else
+				{
+					renderTexture(bt_images[i], renderer, bt_rect[i]);
+				}
+			}
 
 			// text to texture
 			if( !gTimeTextTexture.loadFromRenderedText( timeio.str().c_str(), textColor ) )
 			{
 				printf( "Unable to render time texture!\n" );
 			}
-
 			//Render textures
 			gPromptTextTexture.render( ( SCREEN_WIDTH - gPromptTextTexture.getWidth() ) / 2, 0 );
 			gTimeTextTexture.render( ( SCREEN_WIDTH - gPromptTextTexture.getWidth() ) / 2, ( SCREEN_HEIGHT - gPromptTextTexture.getHeight() ) / 2 );

@@ -9,7 +9,7 @@ const int col_num = 4;
 const int line_num = col_num - 1;
 const int col_width = SCREEN_WIDTH / col_num;
 
-// background
+// background colours
 const int bg_r = 220;
 const int bg_g = 204;
 const int bg_b = 255;
@@ -25,7 +25,7 @@ const int bd_thickness = 4;
 
 
 // notes
-const int max_notes_num = 10;
+// const int max_notes_num = 10;
 const int notes_r = 0;
 const int notes_g = 0;
 const int notes_b = 0;

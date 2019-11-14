@@ -78,7 +78,7 @@ class LTimer
         }
 
         //Gets the timer's time
-        Uint32 getTicks()
+        Uint32 get_current_time()
         {
             //The actual timer time
             time = 0;
