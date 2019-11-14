@@ -30,6 +30,6 @@ const int notes_r = 0;
 const int notes_g = 0;
 const int notes_b = 0;
 const int notes_a = 255;
-const int notes_thickness = 4;
+const int notes_thickness = 10;
 
 #endif

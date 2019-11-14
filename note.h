@@ -16,7 +16,7 @@ class Note
         {
             speed = given_speed;
             hit_time = given_time;
-            // takeoff_time = hit_time - (SCREEN_HEIGHT - goal_height) / speed ;
+            takeoff_time = hit_time - goal_height / speed;
 
             rect.x = 0;
             rect.y = 0;
@@ -24,21 +24,34 @@ class Note
             rect.h = notes_thickness;
 
             showing = false;
+            is_hit = false;
         }
 
-        bool is_showing(Uint32 current_time)
+        bool get_showing()
         {
-            Uint32 takeoff_time = hit_time - goal_height / speed;
-            if(current_time <= hit_time && current_time >= takeoff_time)
+            return showing;
+        }
+
+        bool in_duration(Uint32 current_time)
+        {
+            if (is_hit)
             {
-                showing = true;
-                return showing;
             }
             else
             {
-                showing = false;
-                return false;
+                if(current_time <= hit_time && current_time >= takeoff_time)
+                {
+                    showing = true;
+                    return showing;
+                }
+                else
+                {
+                    showing = false;
+                    return showing;
+                }
             }
+            
+
         }
 
         void render(Uint32 current_time, SDL_Renderer* renderer)
@@ -46,7 +59,7 @@ class Note
             // distance_left_to_travel = (hit_time - current_time) * speed
             rect.y = goal_height - (hit_time - current_time) * speed;
             if(current_time)
-            SDL_SetRenderDrawColor(renderer, bd_r, bd_g, bd_b, bd_a);
+            SDL_SetRenderDrawColor(renderer, notes_r, notes_g, notes_b, notes_a);
 			if (SDL_RenderFillRect(renderer, &rect)) {
 				logSDLError(std::cout, "RenderFillRect note rect");
 				// cleanup(window, renderer);
@@ -54,10 +67,6 @@ class Note
 				// IMG_Quit();
 				// return 1;
 			}
-            else
-            {
-                printf("y = %d\n", rect.y);
-            }
         }
 
         // void handleEvent(SDL_Event& e)
@@ -94,7 +103,11 @@ class Note
 
         Uint32 hit_time;
 
+        Uint32 takeoff_time;
+
         SDL_Rect rect; // position along track is in rect.y
+
+        bool is_hit;
 
         bool showing;
 

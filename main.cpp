@@ -414,7 +414,7 @@ int main(int, char**)
 			timeio << "Seconds: " << (current_time/1000.f);
 
 			// notes
-			if (note1.is_showing(current_time))
+			if (note1.in_duration(current_time))
 			{
 				note1.render(current_time, renderer);
 			}
