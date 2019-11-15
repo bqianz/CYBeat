@@ -5,6 +5,7 @@
 #include "functions.h"
 
 #include <SDL.h>
+#include <iostream>
 
 // goal_height
 // SCREEN_HEIGHT
@@ -27,40 +28,36 @@ class Note
             is_hit = false;
         }
 
-        bool get_showing()
+        bool check_showing(Uint32 current_time)
         {
-            return showing;
-        }
-
-        bool in_duration(Uint32 current_time)
-        {
-            if (is_hit)
+            if(is_hit)
             {
+                // printf("is_hit");
+                showing = false;
+            }
+            else if(current_time >= takeoff_time && rect.y < SCREEN_HEIGHT - notes_thickness)
+            {
+                // printf("current_time = %lu\n",current_time);
+                // printf("hit_time = %lu\n",hit_time);
+                rect.y = (current_time - takeoff_time) * speed;
+                // printf("rect.y = %d\n",rect.y);
+                showing = true;
             }
             else
             {
-                if(current_time <= hit_time && current_time >= takeoff_time)
-                {
-                    showing = true;
-                    return showing;
-                }
-                else
-                {
-                    showing = false;
-                    return showing;
-                }
+                // printf("exited");
+                showing = false;
             }
-            
 
+            return showing;
         }
 
-        void render(Uint32 current_time, SDL_Renderer* renderer)
+        void render(SDL_Renderer* renderer)
         {
             // distance_left_to_travel = (hit_time - current_time) * speed
-            rect.y = goal_height - (hit_time - current_time) * speed;
-            if(current_time)
             SDL_SetRenderDrawColor(renderer, notes_r, notes_g, notes_b, notes_a);
-			if (SDL_RenderFillRect(renderer, &rect)) {
+			if (SDL_RenderFillRect(renderer, &rect))
+            {
 				logSDLError(std::cout, "RenderFillRect note rect");
 				// cleanup(window, renderer);
 				// SDL_Quit();
@@ -69,19 +66,26 @@ class Note
 			}
         }
 
-        // void handleEvent(SDL_Event& e)
-        // {
-        //     //If a key was pressed
-        //     if( e.type == SDL_KEYDOWN && e.key.repeat == 0 )
-        //     {
-        //         //Adjust the velocity
-        //         switch( e.key.keysym.sym )
-        //         {
-        //             case SDLK_d: 
-        //                 vel -= DOT_VEL; 
-        //                 break;
-        //         }
-        //     }
+        void handleEvent(SDL_Event& e, Uint32 current_time)
+        {
+            if (e.type == SDL_KEYDOWN)
+            {
+                if(e.key.keysym.sym == SDLK_d && e.key.repeat == 0)
+                {
+                    // printf("%lu\n",current_time);
+                    // printf("%lu\n",hit_time);
+
+                    // if time of press is within perfect_range of hit_time
+                    // if hit_time - perfect_range < current_time < hit_time + perfect_range
+                    // # TODO: make sure hit_time - perfect_range isn't negative??
+                    if(hit_time - perfect_range < current_time && current_time < hit_time+perfect_range)
+                    {
+                        is_hit = true;
+                        // printf("note was hit");
+                    }
+                }
+            }
+        }
 
         //     // If a key was released
         //     else if( e.type == SDL_KEYUP && e.key.repeat == 0 )
@@ -107,9 +111,8 @@ class Note
 
         SDL_Rect rect; // position along track is in rect.y
 
-        bool is_hit;
-
         bool showing;
+        bool is_hit;
 
 };
 

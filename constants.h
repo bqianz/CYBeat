@@ -32,4 +32,6 @@ const int notes_b = 0;
 const int notes_a = 255;
 const int notes_thickness = 10;
 
+const Uint32 perfect_range = 500; // 500 milliseconds
+
 #endif

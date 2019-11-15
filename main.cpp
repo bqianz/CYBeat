@@ -413,17 +413,10 @@ int main(int, char**)
 			timeio.str("");
 			timeio << "Seconds: " << (current_time/1000.f);
 
-			// notes
-			if (note1.in_duration(current_time))
-			{
-				note1.render(current_time, renderer);
-			}
-
 			// buttons
 
 			const Uint8* currentKeyStates = SDL_GetKeyboardState(NULL); 
 			// arguments gets the number of keys available?
-
 			const int key_indices[4]= {SDL_SCANCODE_D, SDL_SCANCODE_F,SDL_SCANCODE_J,SDL_SCANCODE_K};
 
 			for (int i = 0; i < col_num; i++){
@@ -437,6 +430,14 @@ int main(int, char**)
 				}
 			}
 
+			// notes
+			if (note1.check_showing(current_time))
+			{
+				note1.render(renderer);
+				// if it's the first note in the column
+				note1.handleEvent(e, current_time);
+
+			}
 			// text to texture
 			if( !gTimeTextTexture.loadFromRenderedText( timeio.str().c_str(), textColor ) )
 			{
