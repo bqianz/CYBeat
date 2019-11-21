@@ -4,6 +4,7 @@
 #include "ltexture.h"
 #include "ltimer.h"
 #include "note.h"
+#include "score.h"
 
 #include <sstream>
 #include <SDL.h>
@@ -53,6 +54,9 @@ std::stringstream timeio;
 Note note1;
 
 Uint32 current_time;
+
+// event handler
+SDL_Event e;
 
 bool LTexture::loadFromRenderedText( std::string textureText, SDL_Color textColor )
 {
@@ -322,9 +326,6 @@ int main(int, char**)
 		// main loop flag
 		bool quit = false;
 
-		// event handler
-		SDL_Event e;
-
 		// unsigned integer 32bit type for protability across platforms
 
 		SDL_Color textColor = { 0, 0, 0, 255 };
@@ -417,6 +418,7 @@ int main(int, char**)
 
 			const Uint8* currentKeyStates = SDL_GetKeyboardState(NULL); 
 			// arguments gets the number of keys available?
+
 			const int key_indices[4]= {SDL_SCANCODE_D, SDL_SCANCODE_F,SDL_SCANCODE_J,SDL_SCANCODE_K};
 
 			for (int i = 0; i < col_num; i++){
@@ -430,14 +432,9 @@ int main(int, char**)
 				}
 			}
 
-			// notes
-			if (note1.check_showing(current_time))
-			{
-				note1.render(renderer);
-				// if it's the first note in the column
-				note1.handleEvent(e, current_time);
+			// # TODO: call score in main loop
 
-			}
+
 			// text to texture
 			if( !gTimeTextTexture.loadFromRenderedText( timeio.str().c_str(), textColor ) )
 			{

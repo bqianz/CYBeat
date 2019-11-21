@@ -25,7 +25,7 @@ const int bd_thickness = 4;
 
 
 // notes
-// const int max_notes_num = 10;
+const int max_num_notes_per_col = 6;
 const int notes_r = 0;
 const int notes_g = 0;
 const int notes_b = 0;
