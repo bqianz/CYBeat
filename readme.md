@@ -5,4 +5,4 @@ The project began from the 2019 Yang Chaoyue fans programming competition. The g
 ## Progress as of May 2019
 Buttons responding to key presses.
 
-![buttons demonstration](https://github.com/bqianz/CYBeat/blob/master/intermediate-result-interactive-buttons.gif)
+![buttons demonstration](https://github.com/bqianz/CYBeat/blob/master/progress_nov_2019.gif)
