@@ -58,6 +58,9 @@ Uint32 current_time;
 // event handler
 SDL_Event e;
 
+// score
+Score score;
+
 bool LTexture::loadFromRenderedText( std::string textureText, SDL_Color textColor )
 {
     //Get rid of preexisting texture
@@ -354,10 +357,16 @@ int main(int, char**)
 							if(timer.isStarted())
 							{
 								timer.stop();
+								score.~Score(); // destruct score?
 							}
 							else
 							{
 								timer.start();
+								current_time = timer.get_current_time();
+								score = Score(current_time); // create new instance of score
+								// printf("timer pressed at %d \n",current_time);
+								score.print();
+								// printf("score created successfully");
 							}
 							break;
 						}
@@ -407,13 +416,6 @@ int main(int, char**)
 				}
 			}
 
-
-			// set text
-			current_time = timer.get_current_time();
-
-			timeio.str("");
-			timeio << "Seconds: " << (current_time/1000.f);
-
 			// buttons
 
 			const Uint8* currentKeyStates = SDL_GetKeyboardState(NULL); 
@@ -432,7 +434,21 @@ int main(int, char**)
 				}
 			}
 
-			// # TODO: call score in main loop
+			
+			// set text
+			current_time = timer.get_current_time();
+
+			timeio.str("");
+			timeio << "Seconds: " << (current_time/1000.f);
+			
+
+			// score
+			if(timer.isStarted())
+			{
+				// printf("doing score stuff\n");
+				score.update_score(current_time, e);
+				score.render(current_time, renderer);
+			}
 
 
 			// text to texture

@@ -2,7 +2,7 @@
 #define SCORE_H
 
 #include "note.h"
-#incliude "constants.h"
+#include "constants.h"
 
 #include <SDL.h>
 
@@ -10,21 +10,38 @@ class Score
 {
     public:
     
-    //Initialize
     Score()
     {
-        //make four notes that appear at every press of "start"
-        num = 4;
-        notes = new Note*[4];
-        for (int i = 0; i < num; i++)
+        total = 0;
+        head = 0;
+    }
+
+    //Initialize
+    Score(Uint32 current_time)
+    {
+        //make four notes that appear two seconds after every press of "start"
+
+        // printf("creating instance of Score using current_time = %d\n", current_time);
+        total = 4;
+        head = 0;
+        notes = new Note*[total]();
+        for (int i = 0; i < total; i++)
         {
-            notes[i] = &Note(2000 + i*500);
+            // printf("note %d initializing\n", i);
+            notes[i] = new Note(current_time + 2000 + i*500);
+            // don't do notes[i] = &Note(), cannot take address of a temporary object
+            // don't do *notes[i] = Note(current_time + 2000 + i*500), complies but crashes.
+            // If use "new", then Note object exists until deleted
+            // If don't use "new", Note object only exists in current scope
+
+            // printf("note %d initialized\n", i);
         }
+        // printf("instance of score created\n");
     }
 
     ~Score()
     {
-	    for (int i = 0; i < num; i++) {
+	    for (int i = 0; i < total; i++) {
             if (notes[i] != NULL)
             {
                 delete notes[i];
@@ -33,39 +50,63 @@ class Score
         delete[] notes;
 	}
 
-
-    void update_score(Uint32 current_time, SDL_Event e)
+    void print()
     {
-        int i= 0;
-        while (i < max_num_notes_per_col && i < num)
+        for(int i = head; i < total; i++)
         {
-            notes[i]->update_state(current_time);
+            printf("note[%d]: ",i);
+            notes[i]->print();
         }
-        i++;
+    }
 
-        notes[0]->handleEvent(&e, current_time);
-
-        if(note[0]->get_state == 't') // if first note is terminated
+    void update_score(Uint32 current_time, SDL_Event& e)
+    {
+        // printf("head = %d, total = %d \n", head, total);
+        if(head < total)
         {
-            // cut off first note
-            Notes* temp = notes[0];
-            notes[0] = notes[1];
-            delete temp;
-            num--;
+            // printf("updating score");
+            int i = head;
+            while (i < max_notes && i < total)
+            {
+                // printf("updating note %d", i);
+                notes[i]->update_state(current_time);
+                notes[i]->update_position(current_time);
+                i++;
+            }
+            // printf("updated state according to time and position\n");
+
+            char head_state = notes[head]->get_state();
+            // printf("head state is %c\n", head_state);
+
+            if(head_state == 'e')
+            {
+                // printf("handling head event\n");
+                notes[head]->handleEvent(e, current_time);
+            }
+            else if(head_state == 't') // if first note is terminated
+            {
+                head++;
+            }
+            // printf("updated state according to event\n");
         }
     }
 
     void render(Uint32 current_time, SDL_Renderer* renderer)
     {
-        int i = 0;
-        while (i < max_num_notes_per_col && i < num)
+        // printf("rendering score");
+        if(head < total)
         {
-            if (note[i]->get_state == 'e')
+            int i = head;
+            while (i < max_notes && i < total)
             {
-                note[i]->render(renderer);
+                if (notes[i]->get_state() == 'e')
+                {
+                    notes[i]->render(renderer);
+                }
+                i++;
             }
         }
-        i++;
+
     }
 
 
@@ -76,10 +117,11 @@ class Score
     // array of Note*
     Note** notes;
 
-    int num; // number of notes remaining in col (just one column so far)
+    int total; // totalber of notes all notes in column
 
-    // TODO: need to think about how many notes to loop through for looping
+    int head; // current head
 
-}
+
+};
 
 #endif
