@@ -344,6 +344,7 @@ int main(int, char**)
 
 				// keys that don't happen at the same time
 				else if (e.type == SDL_KEYDOWN) {
+					std::cout<<"location A: "<<e.type<<"\n";
 					switch (e.key.keysym.sym) {
 						
 						//quit
@@ -416,6 +417,34 @@ int main(int, char**)
 				}
 			}
 
+			
+			// set text
+			current_time = timer.get_current_time();
+
+			timeio.str("");
+			timeio << "Seconds: " << (current_time/1000.f);
+			
+
+			// score
+			if(timer.isStarted())
+			{
+				// printf("doing score stuff\n");
+				std::cout<<"location C:"<<e.type<<"\n";
+				
+				score.update_score(current_time, e);
+				score.render(current_time, renderer);
+			}
+
+
+			// text to texture
+			if( !gTimeTextTexture.loadFromRenderedText( timeio.str().c_str(), textColor ) )
+			{
+				printf( "Unable to render time texture!\n" );
+			}
+			//Render textures
+			gPromptTextTexture.render( ( SCREEN_WIDTH - gPromptTextTexture.getWidth() ) / 2, 0 );
+			gTimeTextTexture.render( ( SCREEN_WIDTH - gPromptTextTexture.getWidth() ) / 2, ( SCREEN_HEIGHT - gPromptTextTexture.getHeight() ) / 2 );
+
 			// buttons
 
 			const Uint8* currentKeyStates = SDL_GetKeyboardState(NULL); 
@@ -433,32 +462,6 @@ int main(int, char**)
 					renderTexture(bt_images[i], renderer, bt_rect[i]);
 				}
 			}
-
-			
-			// set text
-			current_time = timer.get_current_time();
-
-			timeio.str("");
-			timeio << "Seconds: " << (current_time/1000.f);
-			
-
-			// score
-			if(timer.isStarted())
-			{
-				// printf("doing score stuff\n");
-				score.update_score(current_time, e);
-				score.render(current_time, renderer);
-			}
-
-
-			// text to texture
-			if( !gTimeTextTexture.loadFromRenderedText( timeio.str().c_str(), textColor ) )
-			{
-				printf( "Unable to render time texture!\n" );
-			}
-			//Render textures
-			gPromptTextTexture.render( ( SCREEN_WIDTH - gPromptTextTexture.getWidth() ) / 2, 0 );
-			gTimeTextTexture.render( ( SCREEN_WIDTH - gPromptTextTexture.getWidth() ) / 2, ( SCREEN_HEIGHT - gPromptTextTexture.getHeight() ) / 2 );
 
 			SDL_RenderPresent(renderer);
 		}

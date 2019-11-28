@@ -109,15 +109,12 @@ class Score
 
     }
 
-
-
-
     private:
 
     // array of Note*
     Note** notes;
 
-    int total; // totalber of notes all notes in column
+    int total; // total number of notes all notes in column
 
     int head; // current head
 

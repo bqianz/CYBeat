@@ -70,7 +70,8 @@ class Note
         // called by first note in a column ONLY
         void handleEvent(SDL_Event& e, Uint32 current_time)
         {
-            // printf("handling event\n");   
+            // printf("handling event\n");
+            //std::cout<<e.type<<"\n";
             if (e.type == SDL_KEYDOWN)
             {
                 printf("key down\n");
