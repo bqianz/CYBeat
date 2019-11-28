@@ -431,10 +431,12 @@ int main(int, char**)
 			}
 
 			// notes
+
 			if (note1.check_showing(current_time))
 			{
 				note1.render(renderer);
 				// if it's the first note in the column
+				// std::cout<<e.type<<SDL_KEYDOWN<<"\n";
 				note1.handleEvent(e, current_time);
 
 			}

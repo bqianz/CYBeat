@@ -68,6 +68,7 @@ class Note
 
         void handleEvent(SDL_Event& e, Uint32 current_time)
         {
+            // std::cout<<e.type<<"\n";
             if (e.type == SDL_KEYDOWN)
             {
                 if(e.key.keysym.sym == SDLK_d && e.key.repeat == 0)
