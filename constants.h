@@ -15,8 +15,15 @@ const int bg_g = 204;
 const int bg_b = 255;
 const int bg_a = 255;
 
-// lines
+// goal_line
+const int goal_r =255;
+const int goal_g =255;
+const int goal_b =255;
+const int goal_a =255;
 const int goal_height = SCREEN_HEIGHT - col_width;
+const int goal_thickness = 10;
+
+// other lines
 const int bd_r = 192;
 const int bd_g = 165;
 const int bd_b = 192;

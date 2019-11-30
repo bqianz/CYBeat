@@ -68,7 +68,7 @@ class Note
 
         // NOTE: this also updates state!!!
         // called by first note in a column ONLY
-        void handleEvent(SDL_Event& e, Uint32 current_time)
+        void handle_event(SDL_Event& e, Uint32 current_time)
         {
             // printf("handling event\n");
             //std::cout<<e.type<<"\n";
@@ -87,7 +87,7 @@ class Note
                     if(perfect_hit_time - perfect_range < current_time && current_time < perfect_hit_time+perfect_range)
                     {
                         state = 't';
-                        printf("note was hit");
+                        printf("note was hit\n");
                     }
                 }
             }
