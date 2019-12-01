@@ -405,8 +405,28 @@ int main(int, char**)
 						
 						case SDLK_d:
 						{
-							score->handle_event(current_time, event);
+							score->handle_event(current_time, event,0);
+							break;
 						}
+
+						case SDLK_f:
+						{
+							score->handle_event(current_time, event,1);
+							printf("f pressed \n");
+							break;
+						}
+
+						case SDLK_j:
+						{
+							score->handle_event(current_time, event,2);
+							break;
+						}
+
+						case SDLK_k:
+						{
+							score->handle_event(current_time, event,3);
+							break;
+						}											
 					}
 				}
 			}
