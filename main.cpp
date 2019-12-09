@@ -1,10 +1,3 @@
-#include "functions.h"
-#include "render_functions.h"
-#include "constants.h"
-#include "ltexture.h"
-#include "ltimer.h"
-#include "note.h"
-
 #include <sstream>
 #include <SDL.h>
 #include <SDL_image.h>
@@ -12,6 +5,14 @@
 #include <stdio.h>
 #include <string>
 #include <cmath>
+
+#include "functions.h"
+#include "render_functions.h"
+#include "constants.h"
+#include "ltexture.h"
+#include "ltimer.h"
+#include "note.h"
+#include "score.h"
 
 //The window we'll be rendering to
 SDL_Window* window = NULL;
@@ -41,18 +42,26 @@ SDL_Rect short_rect[col_num];
 TTF_Font* font = NULL;
 
 //Text textures
-LTexture gTimeTextTexture;
-LTexture gPromptTextTexture;
+LTexture timeTextTexture;
+LTexture pointsTextTexture;
+// LTexture promptTextTexture;
 
 //The application timer
 LTimer timer;
 
 // like iostreams but instead of writing to the console, we can read and write to string in memory
 std::stringstream timeio;
+std::stringstream pointsio;
 
 Note note1;
 
 Uint32 current_time;
+
+// event handler
+SDL_Event event;
+
+// score
+Score* score;
 
 bool LTexture::loadFromRenderedText( std::string textureText, SDL_Color textColor )
 {
@@ -195,12 +204,7 @@ bool init()
 	return success;
 }
 
-bool loadLines(){
-	goal_rect.x = 0;
-	goal_rect.y = goal_height-bd_thickness/2;
-	goal_rect.w = SCREEN_WIDTH;
-	goal_rect.h = bd_thickness;
-
+void load_lines(){
 	for (int i = 0; i < line_num; i++) {
 		vt[i].x = col_width*(i+1) - bd_thickness/2;
 		vt[i].y = 0;
@@ -209,7 +213,15 @@ bool loadLines(){
 	}
 }
 
-bool loadButtons(){
+void load_goal_line()
+{
+	goal_rect.x = 0;
+	goal_rect.y = goal_height-goal_thickness/2;
+	goal_rect.w = SCREEN_WIDTH;
+	goal_rect.h = goal_thickness;
+}
+
+void load_buttons(){
 	// button images
 	const std::string resPath = getResourcePath();
 	// std:: string resPath = "res\\YCY\\";
@@ -219,7 +231,7 @@ bool loadButtons(){
 			cleanup(bt_images[i], renderer, window);
 			IMG_Quit();
 			SDL_Quit();
-			return 1;
+			// return 1;
 		}
 	}
 
@@ -238,7 +250,7 @@ bool loadButtons(){
 			cleanup(bt_images[i], renderer, window);
 			IMG_Quit();
 			SDL_Quit();
-			return 1;
+			// return 1;
 		}
 	}
 
@@ -251,7 +263,7 @@ bool loadButtons(){
 	}
 }
 
-bool loadFont()
+bool load_font()
 {
 	//Loading success flag
 	bool success = true;
@@ -270,19 +282,19 @@ bool loadFont()
 		SDL_Color textColor = { 0, 0, 0, 255 };
 		
 		//Load prompt texture
-		if( !gPromptTextTexture.loadFromRenderedText( "Press S or P", textColor ) )
-		{
-			printf( "Unable to render prompt texture!\n" );
-			success = false;
-		}
+		// if( !gPromptTextTexture.loadFromRenderedText( "Press S or P", textColor ) )
+		// {
+		// 	printf( "Unable to render prompt texture!\n" );
+		// 	success = false;
+		// }
 	}
 
 	return success;
 }
 
 void close(){
-	gTimeTextTexture.free();
-	gPromptTextTexture.free();
+	timeTextTexture.free();
+	pointsTextTexture.free();
 
 	//Free global font
 	TTF_CloseFont( font );
@@ -300,6 +312,13 @@ void close(){
 	TTF_Quit();
 	IMG_Quit();
 	SDL_Quit();
+
+	if(score!=NULL)
+	{
+		score->~Score();
+		// delete score;
+	}
+
 }
 
 int main(int, char**)
@@ -313,17 +332,15 @@ int main(int, char**)
 	else
 	{
 		//Load media
-		loadLines();
+		load_goal_line();
+		load_lines();
 
-		loadButtons();
+		load_buttons();
 
-		loadFont();
+		load_font();
 
 		// main loop flag
 		bool quit = false;
-
-		// event handler
-		SDL_Event e;
 
 		// unsigned integer 32bit type for protability across platforms
 
@@ -332,17 +349,25 @@ int main(int, char**)
 		// while application is running
 		while (!quit) {
 
+			current_time = timer.get_current_time();
+
+			if(timer.isStarted())
+			{
+				score->update_score(current_time);
+				// printf("head = %d, state is %c\n", score->get_head(), score->get_head_state());
+			}
+
 			// handle events on queue
-			while (SDL_PollEvent(&e)) {
-				if (e.type == SDL_QUIT) {
+			while (SDL_PollEvent(&event)) {
+
+				if (event.type == SDL_QUIT) {
 					quit = true;
 				}
 
-				// keys that don't happen at the same time
-				else if (e.type == SDL_KEYDOWN) {
-					switch (e.key.keysym.sym) {
-						
-						//quit
+				else if (event.type == SDL_KEYDOWN && event.key.repeat == 0) {
+					
+					switch (event.key.keysym.sym) {
+
 						case SDLK_ESCAPE:
 							quit = true;
 							break;
@@ -353,10 +378,15 @@ int main(int, char**)
 							if(timer.isStarted())
 							{
 								timer.stop();
+								score->~Score();
+								// delete score;
 							}
-							else
+							else // if timer is stopped
 							{
 								timer.start();
+								score = new Score();
+								// score->print();
+								// printf("score created successfully");
 							}
 							break;
 						}
@@ -374,8 +404,34 @@ int main(int, char**)
 							}
 							break;
 						}
-						default:
-							break; // if generic key pressed, nothing happens
+						
+						case SDLK_d:
+						{
+							score->handle_event(current_time,0);
+							// printf("d pressed \n");
+							break;
+						}
+
+						case SDLK_f:
+						{
+							score->handle_event(current_time,1);
+							// printf("f pressed \n");
+							break;
+						}
+
+						case SDLK_j:
+						{
+							score->handle_event(current_time,2);
+							// printf("j pressed \n");
+							break;
+						}
+
+						case SDLK_k:
+						{
+							score->handle_event(current_time,3);
+							// printf("k pressed \n");
+							break;
+						}											
 					}
 				}
 			}
@@ -385,17 +441,8 @@ int main(int, char**)
 			SDL_SetRenderDrawColor(renderer, bg_r, bg_g, bg_b, bg_a);
 			SDL_RenderClear(renderer); // encouraged for code reusability
 			
-			// goal line
+			// other lines
 			SDL_SetRenderDrawColor(renderer, bd_r, bd_g, bd_b, bd_a);
-			if (SDL_RenderFillRect(renderer, &goal_rect)) {
-				logSDLError(std::cout, "RenderFillRect goal_rect");
-				cleanup(window, renderer);
-				SDL_Quit();
-				IMG_Quit();
-				return 1;
-			}
-
-			// 
 			for (int i = 0; i < line_num; i++) {
 				if (SDL_RenderFillRect(renderer, &vt[i])) {
 					logSDLError(std::cout, "RenderFillRect vt");
@@ -406,17 +453,20 @@ int main(int, char**)
 				}
 			}
 
-
-			// set text
-			current_time = timer.get_current_time();
-
-			timeio.str("");
-			timeio << "Seconds: " << (current_time/1000.f);
-
+			// goal line
+			// SDL_SetRenderDrawColor(renderer, bd_r, goal_g, goal_b, goal_a);
+			if (SDL_RenderFillRect(renderer, &goal_rect)) {
+				logSDLError(std::cout, "RenderFillRect goal_rect");
+				cleanup(window, renderer);
+				SDL_Quit();
+				IMG_Quit();
+				return 1;
+			}
+			
 			// buttons
-
 			const Uint8* currentKeyStates = SDL_GetKeyboardState(NULL); 
 			// arguments gets the number of keys available?
+
 			const int key_indices[4]= {SDL_SCANCODE_D, SDL_SCANCODE_F,SDL_SCANCODE_J,SDL_SCANCODE_K};
 
 			for (int i = 0; i < col_num; i++){
@@ -430,24 +480,44 @@ int main(int, char**)
 				}
 			}
 
-			// notes
 
-			if (note1.check_showing(current_time))
+			// score
+			if(timer.isStarted())
 			{
-				note1.render(renderer);
-				// if it's the first note in the column
-				// std::cout<<e.type<<SDL_KEYDOWN<<"\n";
-				note1.handleEvent(e, current_time);
+				score->render(current_time, renderer);
+				pointsio.str("");
+				pointsio << "Points :" << score->get_points();
 
+
+				if(pointsTextTexture.loadFromRenderedText( pointsio.str().c_str(), textColor))
+				{
+					pointsTextTexture.render(0, 0);
+				}
+				else
+				{
+					printf( "Unable to render points texture!\n" );
+				}
 			}
+
+			// set text
+			timeio.str("");
+			timeio << "Seconds: " << current_time/1000.f;
+
+			//Uint32 points = score->get_points();
+			// int testing = score->test();
+			// printf("%d",score->get_points());
+
+
 			// text to texture
-			if( !gTimeTextTexture.loadFromRenderedText( timeio.str().c_str(), textColor ) )
+			if( !timeTextTexture.loadFromRenderedText( timeio.str().c_str(), textColor ) )
 			{
 				printf( "Unable to render time texture!\n" );
 			}
+
+
 			//Render textures
-			gPromptTextTexture.render( ( SCREEN_WIDTH - gPromptTextTexture.getWidth() ) / 2, 0 );
-			gTimeTextTexture.render( ( SCREEN_WIDTH - gPromptTextTexture.getWidth() ) / 2, ( SCREEN_HEIGHT - gPromptTextTexture.getHeight() ) / 2 );
+			// gPromptTextTexture.render( ( SCREEN_WIDTH - gPromptTextTexture.getWidth() ) / 2, 0 );
+			timeTextTexture.render( 0, SCREEN_HEIGHT/2 );
 
 			SDL_RenderPresent(renderer);
 		}
