@@ -2,7 +2,13 @@
 
 The project began from the 2019 Yang Chaoyue fans programming competition. This project uses the Simple DirectMedia Layer API for C++.
 
-## Progress as of November 2019
-Single note sliding and taking hits.
+## Installation
+Download everything and run main.exe, or download only main.exe, res file folder and all .dll files.
 
-![buttons demonstration](https://github.com/bqianz/CYBeat/blob/master/progress_nov_2019.gif)
+## Controls
+Press S to start or stop, P to pause or unpause. Press D,F,J,K to hit notes in the four columns respetively.
+
+## Progress as of December 2019
+Multiple notes sliding and taking hits, score-keeping.
+
+![buttons demonstration](https://github.com/bqianz/CYBeat/blob/master/progress_dec_2019.gif)
