@@ -1,11 +1,3 @@
-#include "functions.h"
-#include "render_functions.h"
-#include "constants.h"
-#include "ltexture.h"
-#include "ltimer.h"
-#include "note.h"
-#include "score.h"
-
 #include <sstream>
 #include <SDL.h>
 #include <SDL_image.h>
@@ -13,6 +5,14 @@
 #include <stdio.h>
 #include <string>
 #include <cmath>
+
+#include "functions.h"
+#include "render_functions.h"
+#include "constants.h"
+#include "ltexture.h"
+#include "ltimer.h"
+#include "note.h"
+#include "score.h"
 
 //The window we'll be rendering to
 SDL_Window* window = NULL;
@@ -42,14 +42,16 @@ SDL_Rect short_rect[col_num];
 TTF_Font* font = NULL;
 
 //Text textures
-LTexture gTimeTextTexture;
-LTexture gPromptTextTexture;
+LTexture timeTextTexture;
+LTexture pointsTextTexture;
+// LTexture promptTextTexture;
 
 //The application timer
 LTimer timer;
 
 // like iostreams but instead of writing to the console, we can read and write to string in memory
 std::stringstream timeio;
+std::stringstream pointsio;
 
 Note note1;
 
@@ -280,19 +282,19 @@ bool load_font()
 		SDL_Color textColor = { 0, 0, 0, 255 };
 		
 		//Load prompt texture
-		if( !gPromptTextTexture.loadFromRenderedText( "Press S or P", textColor ) )
-		{
-			printf( "Unable to render prompt texture!\n" );
-			success = false;
-		}
+		// if( !gPromptTextTexture.loadFromRenderedText( "Press S or P", textColor ) )
+		// {
+		// 	printf( "Unable to render prompt texture!\n" );
+		// 	success = false;
+		// }
 	}
 
 	return success;
 }
 
 void close(){
-	gTimeTextTexture.free();
-	gPromptTextTexture.free();
+	timeTextTexture.free();
+	pointsTextTexture.free();
 
 	//Free global font
 	TTF_CloseFont( font );
@@ -362,7 +364,7 @@ int main(int, char**)
 					quit = true;
 				}
 
-				else if (event.type == SDL_KEYDOWN) {
+				else if (event.type == SDL_KEYDOWN && event.key.repeat == 0) {
 					
 					switch (event.key.keysym.sym) {
 
@@ -383,7 +385,7 @@ int main(int, char**)
 							{
 								timer.start();
 								score = new Score();
-								score->print();
+								// score->print();
 								// printf("score created successfully");
 							}
 							break;
@@ -405,26 +407,29 @@ int main(int, char**)
 						
 						case SDLK_d:
 						{
-							score->handle_event(current_time, event,0);
+							score->handle_event(current_time,0);
+							// printf("d pressed \n");
 							break;
 						}
 
 						case SDLK_f:
 						{
-							score->handle_event(current_time, event,1);
-							printf("f pressed \n");
+							score->handle_event(current_time,1);
+							// printf("f pressed \n");
 							break;
 						}
 
 						case SDLK_j:
 						{
-							score->handle_event(current_time, event,2);
+							score->handle_event(current_time,2);
+							// printf("j pressed \n");
 							break;
 						}
 
 						case SDLK_k:
 						{
-							score->handle_event(current_time, event,3);
+							score->handle_event(current_time,3);
+							// printf("k pressed \n");
 							break;
 						}											
 					}
@@ -479,21 +484,38 @@ int main(int, char**)
 			if(timer.isStarted())
 			{
 				score->render(current_time, renderer);
+				pointsio.str("");
+				pointsio << "Points :" << score->get_points();
+
+				if(pointsTextTexture.loadFromRenderedText( pointsio.str().c_str(), textColor))
+				{
+					pointsTextTexture.render(0, 0);
+				}
+				else
+				{
+					printf( "Unable to render points texture!\n" );
+				}
 			}
 
 			// set text
 			timeio.str("");
-			timeio << "Seconds: " << (current_time/1000.f);
+			timeio << "Seconds: " << current_time/1000.f;
+
+			//Uint32 points = score->get_points();
+			// int testing = score->test();
+			// printf("%d",score->get_points());
+
 
 			// text to texture
-			if( !gTimeTextTexture.loadFromRenderedText( timeio.str().c_str(), textColor ) )
+			if( !timeTextTexture.loadFromRenderedText( timeio.str().c_str(), textColor ) )
 			{
 				printf( "Unable to render time texture!\n" );
 			}
 
+
 			//Render textures
-			gPromptTextTexture.render( ( SCREEN_WIDTH - gPromptTextTexture.getWidth() ) / 2, 0 );
-			gTimeTextTexture.render( ( SCREEN_WIDTH - gPromptTextTexture.getWidth() ) / 2, ( SCREEN_HEIGHT - gPromptTextTexture.getHeight() ) / 2 );
+			// gPromptTextTexture.render( ( SCREEN_WIDTH - gPromptTextTexture.getWidth() ) / 2, 0 );
+			timeTextTexture.render( 0, SCREEN_HEIGHT/2 );
 
 			SDL_RenderPresent(renderer);
 		}
