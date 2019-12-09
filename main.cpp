@@ -480,12 +480,14 @@ int main(int, char**)
 				}
 			}
 
+
 			// score
 			if(timer.isStarted())
 			{
 				score->render(current_time, renderer);
 				pointsio.str("");
 				pointsio << "Points :" << score->get_points();
+
 
 				if(pointsTextTexture.loadFromRenderedText( pointsio.str().c_str(), textColor))
 				{
