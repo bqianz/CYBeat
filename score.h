@@ -21,6 +21,9 @@ class Score
 
     Uint32 points; // numerical score
 
+    std::string feedback; // _, missed, good, perfect
+    Uint32 feedback_start_time;
+
 
     public:
 
@@ -29,6 +32,7 @@ class Score
     {
         for (int i = 0; i < col_num; i++)
         {
+            feedback = " ";
             points = 0;
 
             int n_col = col_num - i; // number of notes in column i
@@ -98,11 +102,40 @@ class Score
                     notes[i][j]->update_position(current_time);
                 }
                 // printf("updated state according to time and position\n");
-                if(notes[i][head_of_col]->get_state() == 't') // if first note is terminated
+            }
+        }
+    }
+
+    void update_head_and_feedback(Uint32 current_time)
+    {
+        int temp = perfect+1;
+        for(int i = 0; i < col_num; i++)
+        {
+            if(head[i]< total[i])
+            {
+                int hs = notes[i][head[i]]->get_state(); // head state
+                if(hs > existing)
                 {
                     head[i]++;
+                    temp = std::min(temp,hs);
                 }
             }
+        }
+
+        if(temp==perfect)
+        {
+            feedback = "Perfect";
+            feedback_start_time = current_time;
+        }
+        else if(temp==good)
+        {
+            feedback = "Good";
+            feedback_start_time = current_time;
+        }
+        else if(temp==missed)
+        {
+            feedback = "Miss";
+            feedback_start_time = current_time;
         }
     }
 
@@ -114,17 +147,29 @@ class Score
 
         if(head_of_col < total_of_col)
         {
-            char head_state = notes[i][head_of_col]->get_state();
+            int head_state = notes[i][head_of_col]->get_state();
             // printf("head state in col %d is %c\n", i, head_state);
 
-            if(head_state == 'e')
+            if(head_state == existing)
             {
                 // printf("handling head event in column %d\n", i);
                 points += notes[i][head_of_col]->handle_event(current_time);
-                printf("%d\n", points);
+                // printf("%d\n", points);
             }
         }
     }
+
+
+    std::string get_feedback()
+    {
+        return feedback;
+    }
+
+    Uint32 get_feedback_start_time()
+    {
+        return feedback_start_time;
+    }
+
 
     void render(Uint32 current_time, SDL_Renderer* renderer)
     {
@@ -138,7 +183,7 @@ class Score
                 for(int j = head_col; j < tolerance; j++)
                 {
                     // printf();
-                    if (notes[i][j]->get_state() == 'e')
+                    if (notes[i][j]->get_state() == existing)
                     {
                         notes[i][j]->render(renderer);
                         // printf("rendered note[%d][%d]\n", i,j);
@@ -154,7 +199,7 @@ class Score
         return total[i];
     }
 
-    char get_head_state(int i)
+    int get_head_state(int i)
     {
         return notes[i][head[i]]->get_state();
     }

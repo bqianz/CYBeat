@@ -28,40 +28,33 @@ class Note
             rect.w = col_width - bd_thickness;
             rect.h = notes_thickness;
 
-            state = 'i';
-            // printf("current note initialized\n");
+            state = irrelevent;
         }
 
         // updates state, rect.y
         // called by every note within the max_num_of_notes_per_col limit
         void update_state(Uint32 current_time)
         {
-            // printf("current state is %c\n", state);
-            if(state=='i' && current_time >= takeoff_time)
+            if(state==irrelevent && current_time >= takeoff_time)
             {
-                state = 'e';
-                // printf("note taking off at %d \n", current_time);
+                state = existing;
             }
-            else if (state=='e' && current_time >= disappear_time)
+            else if (state==existing && current_time >= disappear_time)
             {
-                state = 't';
-                // printf("note reached finish line at %d miliseconds with rect.y = %d\n", current_time, rect.y);
+                state = missed;
             }
-            // printf("updated state is %c\n",state);
+
         }
 
         void update_position(Uint32 current_time)
         {
-            if (state=='e')
+            if (state==existing)
             {
                 rect.y = (current_time - takeoff_time) * speed;
-                // printf("current_time = %lu\n",current_time);
-                // printf("perfect_hit_time = %lu\n",perfect_hit_time);
-                // printf("rect.y = %d\n",rect.y);
             }
         }
 
-        char get_state()
+        int get_state()
         {
             return state;
         }
@@ -80,13 +73,13 @@ class Note
             Uint32 points = 0;
             if(perfect_hit_time - perfect_range < current_time && current_time < perfect_hit_time+perfect_range)
             {
-                state = 't';
+                state = perfect;
                 points = perfect_points;
             
             }
             else if(perfect_hit_time - good_range < current_time && current_time < perfect_hit_time+good_range)
             {
-                state = 't';
+                state = good;
                 points = good_points;
             }
             return points;
@@ -111,7 +104,7 @@ class Note
 
         void print()
         {
-            printf("hit time = %d, disappear time = %d, state = %c \n", perfect_hit_time, disappear_time, state);
+            printf("hit time = %d, disappear time = %d, state = %d \n", perfect_hit_time, disappear_time, state);
         }
 
     private:
@@ -127,8 +120,7 @@ class Note
         // bool showing;
         // bool is_hit;
 
-        char state;
-        // 'i' = irrelevent, 'e' = existing, 't' = terminated
+        int state;
 
 };
 

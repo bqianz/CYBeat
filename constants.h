@@ -39,9 +39,17 @@ const int notes_b = 0;
 const int notes_a = 255;
 const int notes_thickness = 10;
 
-const Uint32 perfect_range = 200; // 200 milliseconds
+const Uint32 perfect_range = 100; // 200 milliseconds
 const Uint32 perfect_points = 500; 
-const Uint32 good_range = 500;
+const Uint32 good_range = 200;
 const Uint32 good_points = 200;
+
+
+// note states
+const int irrelevent = -1;
+const int existing = 0;
+const int missed = 1;
+const int good = 2;
+const int perfect = 3;
 
 #endif

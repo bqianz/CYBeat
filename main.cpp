@@ -44,6 +44,7 @@ TTF_Font* font = NULL;
 //Text textures
 LTexture timeTextTexture;
 LTexture pointsTextTexture;
+LTexture feedbackTextTexture;
 // LTexture promptTextTexture;
 
 //The application timer
@@ -295,6 +296,7 @@ bool load_font()
 void close(){
 	timeTextTexture.free();
 	pointsTextTexture.free();
+	feedbackTextTexture.free();
 
 	//Free global font
 	TTF_CloseFont( font );
@@ -407,28 +409,40 @@ int main(int, char**)
 						
 						case SDLK_d:
 						{
-							score->handle_event(current_time,0);
+							if(timer.isStarted())
+							{
+								score->handle_event(current_time,0);
+							}
 							// printf("d pressed \n");
 							break;
 						}
 
 						case SDLK_f:
 						{
-							score->handle_event(current_time,1);
+							if(timer.isStarted())
+							{
+								score->handle_event(current_time,1);
+							}
 							// printf("f pressed \n");
 							break;
 						}
 
 						case SDLK_j:
 						{
-							score->handle_event(current_time,2);
+							if(timer.isStarted())
+							{
+								score->handle_event(current_time,2);
+							}
 							// printf("j pressed \n");
 							break;
 						}
 
 						case SDLK_k:
 						{
-							score->handle_event(current_time,3);
+							if(timer.isStarted())
+							{
+								score->handle_event(current_time,3);
+							}
 							// printf("k pressed \n");
 							break;
 						}											
@@ -436,6 +450,11 @@ int main(int, char**)
 				}
 			}
 
+			if(timer.isStarted())
+			{
+				score->update_head_and_feedback(current_time);
+				// printf("head = %d, state is %c\n", score->get_head(), score->get_head_state());
+			}
 
 			// draw everything starting from background
 			SDL_SetRenderDrawColor(renderer, bg_r, bg_g, bg_b, bg_a);
@@ -487,8 +506,6 @@ int main(int, char**)
 				score->render(current_time, renderer);
 				pointsio.str("");
 				pointsio << "Points :" << score->get_points();
-
-
 				if(pointsTextTexture.loadFromRenderedText( pointsio.str().c_str(), textColor))
 				{
 					pointsTextTexture.render(0, 0);
@@ -497,6 +514,20 @@ int main(int, char**)
 				{
 					printf( "Unable to render points texture!\n" );
 				}
+
+
+				if(feedbackTextTexture.loadFromRenderedText( score->get_feedback().c_str(), textColor))
+				{
+					int temp = 255*(1-(current_time - score->get_feedback_start_time())/500.f);// feedback fade duration 500
+					int alpha = std::max(0,temp); 
+					feedbackTextTexture.setAlpha(alpha);
+					feedbackTextTexture.render(0, 300);
+				}
+				else
+				{
+					printf( "Unable to render feedback texture!\n" );
+				}
+
 			}
 
 			// set text
@@ -517,7 +548,7 @@ int main(int, char**)
 
 			//Render textures
 			// gPromptTextTexture.render( ( SCREEN_WIDTH - gPromptTextTexture.getWidth() ) / 2, 0 );
-			timeTextTexture.render( 0, SCREEN_HEIGHT/2 );
+			// timeTextTexture.render( 0, SCREEN_HEIGHT/2 );
 
 			SDL_RenderPresent(renderer);
 		}
