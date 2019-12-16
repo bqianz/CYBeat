@@ -21,7 +21,7 @@ class Score
 
     Uint32 points; // numerical score
 
-    std::string feedback; // _, missed, good, perfect
+    int feedback; // _, missed, good, perfect
     Uint32 feedback_start_time;
 
 
@@ -32,7 +32,9 @@ class Score
     {
         for (int i = 0; i < col_num; i++)
         {
-            feedback = " ";
+            feedback = irrelevent;
+            feedback_start_time = 0;
+            
             points = 0;
 
             int n_col = col_num - i; // number of notes in column i
@@ -109,6 +111,7 @@ class Score
     void update_head_and_feedback(Uint32 current_time)
     {
         int temp = perfect+1;
+
         for(int i = 0; i < col_num; i++)
         {
             if(head[i]< total[i])
@@ -121,20 +124,13 @@ class Score
                 }
             }
         }
+        // temp is the lower limit of head state of all 4 columns
+        // if none of the head of the columns are hit, then temp = perfect+1 (which is meaningless)
+        // existing < temp <= perfect+1
 
-        if(temp==perfect)
+        if(temp <= perfect) // if lower limit is not meaningless, aka a note has been hit
         {
-            feedback = "Perfect";
-            feedback_start_time = current_time;
-        }
-        else if(temp==good)
-        {
-            feedback = "Good";
-            feedback_start_time = current_time;
-        }
-        else if(temp==missed)
-        {
-            feedback = "Miss";
+            feedback = temp;
             feedback_start_time = current_time;
         }
     }
@@ -160,7 +156,7 @@ class Score
     }
 
 
-    std::string get_feedback()
+    int get_feedback()
     {
         return feedback;
     }

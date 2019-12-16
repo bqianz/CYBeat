@@ -32,7 +32,7 @@ class LTexture
 		
 		// #if defined(_SDL_TTF_H) || defined(SDL_TTF_H)
 		//Creates image from font string
-		bool loadFromRenderedText( std::string textureText, SDL_Color textColor );
+		bool loadFromRenderedText( std::string textureText, SDL_Color textColor, TTF_Font* font);
 		// #endif
 
 		//Deallocates texture
@@ -61,7 +61,24 @@ class LTexture
 		}
 		
 		//Renders texture at given point
-		void render( int x, int y);
+		void render( int x, int y, SDL_Renderer* renderer)
+		{
+			//Set rendering space and render to screen
+			SDL_Rect renderQuad = { x, y, mWidth, mHeight };
+			SDL_RenderCopy( renderer, mTexture, NULL, &renderQuad );
+		}
+
+		void render(std::string position, SDL_Renderer* renderer)
+		{
+			if(position == "center")
+			{
+				render((SCREEN_WIDTH - mWidth)/2, (SCREEN_HEIGHT - mHeight)/2, renderer);
+			}
+			if(position == "top center")
+			{
+				render((SCREEN_WIDTH - mWidth)/2,0, renderer);
+			}
+		}
 
 		//Gets image dimensions
 		int getWidth() {return mWidth;}

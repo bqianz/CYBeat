@@ -6,6 +6,7 @@ const int SCREEN_WIDTH = 400;
 const int SCREEN_HEIGHT = 600;
 
 const int col_num = 4;
+const std::string keys[col_num] = {"D", "F", "J", "K"};
 const int line_num = col_num - 1;
 const int col_width = SCREEN_WIDTH / col_num;
 
@@ -46,10 +47,15 @@ const Uint32 good_points = 200;
 
 
 // note states
-const int irrelevent = -1;
-const int existing = 0;
-const int missed = 1;
-const int good = 2;
-const int perfect = 3;
+const int irrelevent = -2;
+const int existing = -1;
+const int missed = 0;
+const int good = 1;
+const int perfect = 2;
+
+// font
+const std::string font_name = "lazy.ttf";
+const int regular_font_size = 22;
+const int big_font_size = 50;
 
 #endif

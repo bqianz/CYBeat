@@ -40,12 +40,14 @@ SDL_Rect short_rect[col_num];
 
 //Globally used font
 TTF_Font* font = NULL;
+TTF_Font* font_big = NULL;
 
 //Text textures
-LTexture timeTextTexture;
-LTexture pointsTextTexture;
-LTexture feedbackTextTexture;
-// LTexture promptTextTexture;
+LTexture timeTexture;
+LTexture pointsTexture;
+LTexture feedbackTextures[3];
+LTexture promptTextures[2];
+LTexture promptKeysTextures[4];
 
 //The application timer
 LTimer timer;
@@ -64,7 +66,7 @@ SDL_Event event;
 // score
 Score* score;
 
-bool LTexture::loadFromRenderedText( std::string textureText, SDL_Color textColor )
+bool LTexture::loadFromRenderedText( std::string textureText, SDL_Color textColor, TTF_Font* font)
 {
     //Get rid of preexisting texture
     free();
@@ -137,13 +139,6 @@ bool LTexture::loadFromFile( std::string path )
 	//Return success
 	mTexture = newTexture;
 	return mTexture != NULL;
-}
-
-void LTexture::render( int x, int y )
-{
-	//Set rendering space and render to screen
-	SDL_Rect renderQuad = { x, y, mWidth, mHeight };
-	SDL_RenderCopy( renderer, mTexture, NULL, &renderQuad );
 }
 
 bool init()
@@ -270,9 +265,10 @@ bool load_font()
 	bool success = true;
 
 	//Open the font
-	const std::string resPath = getResourcePath() + "lazy.ttf";
-	font = TTF_OpenFont( resPath.c_str(), 28 );
-	if( font == NULL )
+	const std::string resPath = getResourcePath() + font_name;
+	font = TTF_OpenFont( resPath.c_str(), regular_font_size);
+	font_big = TTF_OpenFont(resPath.c_str(),big_font_size);
+	if( font == NULL || font_big == NULL )
 	{
 		printf( "Failed to load lazy font! SDL_ttf Error: %s\n", TTF_GetError() );
 		success = false;
@@ -281,25 +277,68 @@ bool load_font()
 	{
 		//Set text color as black
 		SDL_Color textColor = { 0, 0, 0, 255 };
-		
-		//Load prompt texture
-		// if( !gPromptTextTexture.loadFromRenderedText( "Press S or P", textColor ) )
-		// {
-		// 	printf( "Unable to render prompt texture!\n" );
-		// 	success = false;
-		// }
+
+		// load prompt texture
+		if( !promptTextures[0].loadFromRenderedText( "Press S for start and stop.", textColor, font) )
+		{
+			printf( "Unable to render Prompt texture!\n" );
+			success = false;
+		}
+		if( !promptTextures[1].loadFromRenderedText( "Press P for pause and unpause", textColor, font) )
+		{
+			printf( "Unable to render Prompt texture!\n" );
+			success = false;
+		}
+
+		for(int i = 0; i < col_num; i++)
+		{
+			if( !promptKeysTextures[i].loadFromRenderedText( keys[i], textColor, font_big) )
+			{
+				printf( "Unable to render PromptKeys texture!\n" );
+				success = false;
+			}
+		}
+
+		//Load feedback texture
+		if( !feedbackTextures[2].loadFromRenderedText( "Perfect", textColor, font_big) )
+		{
+			printf( "Unable to render Perfect texture!\n" );
+			success = false;
+		}
+		if( !feedbackTextures[1].loadFromRenderedText( "Good", textColor, font_big) )
+		{
+			printf( "Unable to render Good texture!\n" );
+			success = false;
+		}
+		if( !feedbackTextures[0].loadFromRenderedText( "Miss", textColor, font_big) )
+		{
+			printf( "Unable to render Miss texture!\n" );
+			success = false;
+		}
 	}
 
 	return success;
 }
 
 void close(){
-	timeTextTexture.free();
-	pointsTextTexture.free();
-	feedbackTextTexture.free();
+	// free font textures
+	timeTexture.free();
+	pointsTexture.free();
+	for(int i = 0; i < 2; i++)
+	{
+		feedbackTextures[i].free();
+	}
+	promptTextures[0].free();
+	promptTextures[1].free();
+	for(int i = 0; i < col_num; i++)
+	{
+		promptKeysTextures[i].free();
+	}
 
 	//Free global font
 	TTF_CloseFont( font );
+	TTF_CloseFont(font_big);
+	font_big = NULL;
 	font = NULL;
 
 	cleanup(renderer, window);
@@ -506,9 +545,9 @@ int main(int, char**)
 				score->render(current_time, renderer);
 				pointsio.str("");
 				pointsio << "Points :" << score->get_points();
-				if(pointsTextTexture.loadFromRenderedText( pointsio.str().c_str(), textColor))
+				if(pointsTexture.loadFromRenderedText( pointsio.str().c_str(), textColor,font))
 				{
-					pointsTextTexture.render(0, 0);
+					pointsTexture.render("top center", renderer);
 				}
 				else
 				{
@@ -516,39 +555,43 @@ int main(int, char**)
 				}
 
 
-				if(feedbackTextTexture.loadFromRenderedText( score->get_feedback().c_str(), textColor))
+				int feedback = score->get_feedback();
+				if(feedback > existing && feedback <=perfect)
 				{
 					int temp = 255*(1-(current_time - score->get_feedback_start_time())/500.f);// feedback fade duration 500
 					int alpha = std::max(0,temp); 
-					feedbackTextTexture.setAlpha(alpha);
-					feedbackTextTexture.render(0, 300);
+					feedbackTextures[feedback].setAlpha(alpha);
+					feedbackTextures[feedback].render("center", renderer);
 				}
-				else
-				{
-					printf( "Unable to render feedback texture!\n" );
-				}
-
 			}
-
-			// set text
-			timeio.str("");
-			timeio << "Seconds: " << current_time/1000.f;
-
-			//Uint32 points = score->get_points();
-			// int testing = score->test();
-			// printf("%d",score->get_points());
-
-
-			// text to texture
-			if( !timeTextTexture.loadFromRenderedText( timeio.str().c_str(), textColor ) )
+			else // stop screen rendering
 			{
-				printf( "Unable to render time texture!\n" );
+				// S, P controls
+				int vertical_margin = 10;
+				int total_height = promptTextures[0].getHeight() + promptTextures[1].getHeight() + vertical_margin;
+				int top_margin = (SCREEN_HEIGHT - total_height)/2;
+				promptTextures[0].render((SCREEN_WIDTH - promptTextures[0].getWidth())/2, top_margin, renderer);
+				promptTextures[1].render((SCREEN_WIDTH - promptTextures[1].getWidth())/2, top_margin + vertical_margin + promptTextures[0].getHeight(), renderer);
+
+				// hit buttons
+				for(int i = 0; i < col_num; i++)
+				{
+					int left_margin = (col_width - promptKeysTextures[i].getWidth())/2;
+					int top_margin = (col_width - promptKeysTextures[i].getHeight())/2;
+					promptKeysTextures[i].render(i*col_width + left_margin, goal_height + top_margin, renderer);
+				}
 			}
+			
 
-
-			//Render textures
-			// gPromptTextTexture.render( ( SCREEN_WIDTH - gPromptTextTexture.getWidth() ) / 2, 0 );
-			// timeTextTexture.render( 0, SCREEN_HEIGHT/2 );
+			// time texture
+			// timeio.str("");
+			// timeio << "Seconds: " << current_time/1000.f;
+			// text to texture
+			// if( !timeTexture.loadFromRenderedText( timeio.str().c_str(), textColor,font ) )
+			// {
+			// 	printf( "Unable to render time texture!\n" );
+			// }
+			// timeTexture.render( 0, SCREEN_HEIGHT/2 );
 
 			SDL_RenderPresent(renderer);
 		}
