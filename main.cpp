@@ -67,7 +67,7 @@ Uint32 current_time;
 SDL_Event event;
 
 // score
-Score* score;
+Score* score = NULL;
 
 bool LTexture::loadFromRenderedText( std::string textureText, SDL_Color textColor, TTF_Font* font)
 {
@@ -452,11 +452,9 @@ int main(int, char**)
 							}
 							else // if timer is stopped
 							{
+								score = new Score(getResourcePath() + "calorie.txt");
 								timer.start();
-								score = new Score();
 								Mix_PlayMusic( calorie, -1 );
-								// score->print();
-								// printf("score created successfully");
 							}
 							break;
 						}

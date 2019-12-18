@@ -6,48 +6,44 @@
 
 #include <SDL.h>
 
+#include <fstream>
+#include <iostream>
+
 class Score
 {
-    private:
-
-    Note** notes[col_num]; 
+private:
+    Note** notes[col_num];
     // notes = {col1, col2, col3, col4}
-    // col1 = {note1, note2, ...} (not fixed length)
+    // *col1 = {note1, note2, ...} (not fixed length)
+    // col1 is of type Note**
     // note1 is a pointer to a Note object
 
-    int total[col_num]; // total number of notes for each column
+    int total[col_num] = {0,0,0,0}; // total number of notes for each column
 
-    int head[col_num]; // current head for each column
+    int head[col_num] = {0,0,0,0}; // current head for each column
 
-    Uint32 points; // numerical score
+    Uint32 points = 0; // numerical score
 
-    int feedback; // _, missed, good, perfect
-    Uint32 feedback_start_time;
+    int feedback = irrelevent; // _, missed, good, perfect
+    Uint32 feedback_start_time = 0;
 
-
-    public:
-
+public:
     //Initialize
     Score()
     {
         for (int i = 0; i < col_num; i++)
         {
-            feedback = irrelevent;
-            feedback_start_time = 0;
-            
-            points = 0;
 
             int n_col = col_num - i; // number of notes in column i
-            
+
             total[i] = n_col;
-            head[i] = 0;
 
             notes[i] = new Note*[n_col]();
 
             for (int j = 0; j < n_col; j++)
             {
                 // printf("note %d initializing\n", i);
-                notes[i][j] = new Note(i, 2000 + j*500);
+                notes[i][j] = new Note(i, 2000 + j * 500);
                 // don't do notes[i] = &Note(), cannot take address of a temporary object
                 // don't do *notes[i] = Note(current_time + 2000 + i*500), complies but crashes.
                 // If use "new", then Note object exists until deleted
@@ -55,13 +51,56 @@ class Score
 
                 // printf("note %d initialized\n", i);
             }
-        // printf("instance of score created\n");
+            // printf("instance of score created\n");
         }
     }
 
     Score(std::string filepath)
     {
-        
+
+        Uint32 time;
+        int i;
+        std::ifstream infile(filepath);
+        std::string line;
+
+        // find out how how many notes in each column
+        while (std::getline(infile, line))
+        {
+            std::size_t found = (line.find("点") == std::string::npos)? line.find("按") : line.find("点");
+            if (found != std::string::npos)
+            {
+                std::istringstream iss(line.substr(found+4));
+                iss >> time >> i;
+                total[i]++;
+            }
+        }
+        // make arrays of given sizes
+        for(int i = 0 ; i < col_num; i++)
+        {
+            notes[i] = new Note*[total[i]]();
+        }
+
+        // reset file stream
+        infile.clear();
+        infile.seekg(0, std::ios::beg);
+        // make notes
+        int temp[] = {0,0,0,0};
+        // std::getline(infile, line);
+        while (std::getline(infile, line))
+        {
+            std::size_t found = (line.find("点") == std::string::npos)? line.find("按") : line.find("点");
+            if (found != std::string::npos)
+            {
+                std::istringstream iss(line.substr(found+4));
+                iss >> time >> i;
+                // std::cout<<time<<"\n";
+
+                int j = temp[i];
+                notes[i][j] = new Note(i, time);
+
+                temp[i]++;
+            }
+        }
     }
 
     ~Score()
@@ -77,7 +116,7 @@ class Score
             }
             delete[] notes[i];
         }
-	}
+    }
 
     void print()
     {
@@ -85,7 +124,7 @@ class Score
         {
             for (int j = head[i]; j < total[i]; j++)
             {
-                printf("note[%d][%d]: ",i,j);
+                printf("note[%d][%d]: ", i, j);
                 notes[i][j]->print();
             }
         }
@@ -93,16 +132,16 @@ class Score
 
     void update_score(Uint32 current_time) // update status of notes in all columns
     {
-        for(int i = 0; i < col_num; i++)
+        for (int i = 0; i < col_num; i++)
         {
             int head_of_col = head[i];
             int total_of_col = total[i];
-            if(head_of_col < total_of_col) // if we haven't finished going through the score
+            if (head_of_col < total_of_col) // if we haven't finished going through the score
             {
                 // printf("updating score");
-                int tolerance = std::min(head_of_col+max_notes, total_of_col);
+                int tolerance = std::min(head_of_col + max_notes, total_of_col);
 
-                for(int j = head_of_col; j< tolerance; j++)
+                for (int j = head_of_col; j < tolerance; j++)
                 {
                     // printf("updating note %d", i);
                     notes[i][j]->update_state(current_time);
@@ -115,17 +154,17 @@ class Score
 
     void update_head_and_feedback(Uint32 current_time)
     {
-        int temp = perfect+1;
+        int temp = perfect + 1;
 
-        for(int i = 0; i < col_num; i++)
+        for (int i = 0; i < col_num; i++)
         {
-            if(head[i]< total[i])
+            if (head[i] < total[i])
             {
                 int hs = notes[i][head[i]]->get_state(); // head state
-                if(hs > existing)
+                if (hs > existing)
                 {
                     head[i]++;
-                    temp = std::min(temp,hs);
+                    temp = std::min(temp, hs);
                 }
             }
         }
@@ -133,7 +172,7 @@ class Score
         // if none of the head of the columns are hit, then temp = perfect+1 (which is meaningless)
         // existing < temp <= perfect+1
 
-        if(temp <= perfect) // if lower limit is not meaningless, aka a note has been hit
+        if (temp <= perfect) // if lower limit is not meaningless, aka a note has been hit
         {
             feedback = temp;
             feedback_start_time = current_time;
@@ -146,12 +185,12 @@ class Score
         int head_of_col = head[i];
         int total_of_col = total[i];
 
-        if(head_of_col < total_of_col)
+        if (head_of_col < total_of_col)
         {
             int head_state = notes[i][head_of_col]->get_state();
             // printf("head state in col %d is %c\n", i, head_state);
 
-            if(head_state == existing)
+            if (head_state == existing)
             {
                 // printf("handling head event in column %d\n", i);
                 points += notes[i][head_of_col]->handle_event(current_time);
@@ -159,7 +198,6 @@ class Score
             }
         }
     }
-
 
     int get_feedback()
     {
@@ -171,27 +209,23 @@ class Score
         return feedback_start_time;
     }
 
-
-    void render(Uint32 current_time, SDL_Renderer* renderer)
+    void render(Uint32 current_time, SDL_Renderer *renderer)
     {
-        for(int i = 0; i < col_num; i++)
+        for (int i = 0; i < col_num; i++)
         {
             int head_col = head[i];
             int total_col = total[i];
-            if(head_col < total_col)
+            if (head_col < total_col)
             {
-                int tolerance = std::min(head_col+max_notes, total_col);
-                for(int j = head_col; j < tolerance; j++)
+                int tolerance = std::min(head_col + max_notes, total_col);
+                for (int j = head_col; j < tolerance; j++)
                 {
-                    // printf();
                     if (notes[i][j]->get_state() == existing)
                     {
                         notes[i][j]->render(renderer);
-                        // printf("rendered note[%d][%d]\n", i,j);
                     }
                 }
             }
-            // printf("rendered column %d\n", i);
         }
     }
 
