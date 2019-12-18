@@ -1,10 +1,12 @@
-#include <sstream>
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_ttf.h>
+#include <SDL_mixer.h>
+
 #include <stdio.h>
 #include <string>
 #include <cmath>
+#include <sstream>
 
 #include "functions.h"
 #include "render_functions.h"
@@ -42,8 +44,11 @@ SDL_Rect short_rect[col_num];
 TTF_Font* font = NULL;
 TTF_Font* font_big = NULL;
 
+// background music
+Mix_Music* calorie = NULL;
+
 //Text textures
-LTexture timeTexture;
+// LTexture timeTexture;
 LTexture pointsTexture;
 LTexture feedbackTextures[3];
 LTexture promptTextures[2];
@@ -55,8 +60,6 @@ LTimer timer;
 // like iostreams but instead of writing to the console, we can read and write to string in memory
 std::stringstream timeio;
 std::stringstream pointsio;
-
-Note note1;
 
 Uint32 current_time;
 
@@ -147,7 +150,7 @@ bool init()
 	bool success = true;
 
 	//Initialize SDL
-	if( SDL_Init( SDL_INIT_VIDEO ) < 0 )
+	if( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_AUDIO ) < 0 )
 	{
 		printf( "SDL could not initialize! SDL Error: %s\n", SDL_GetError() );
 		success = false;
@@ -193,6 +196,14 @@ bool init()
 					printf( "SDL_ttf could not initialize! SDL_ttf Error: %s\n", TTF_GetError() );
 					success = false;
 				}
+
+				//Initialize SDL_mixer
+				// might need to play around with 4th argument to minimize lag
+                if( Mix_OpenAudio( 44100, MIX_DEFAULT_FORMAT, 2, 2048 ) < 0 )
+                {
+                    printf( "SDL_mixer could not initialize! SDL_mixer Error: %s\n", Mix_GetError() );
+                    success = false;
+                }
 			}
 		}
 	}
@@ -259,6 +270,16 @@ void load_buttons(){
 	}
 }
 
+void load_audio()
+{
+	bool success = true;
+	calorie = Mix_LoadMUS( (getResourcePath() + "calorie.mp3").c_str() );
+	if( calorie == NULL )
+    {
+        printf( "Failed to load beat music! SDL_mixer Error: %s\n", Mix_GetError() );
+    }
+}
+
 bool load_font()
 {
 	//Loading success flag
@@ -322,7 +343,7 @@ bool load_font()
 
 void close(){
 	// free font textures
-	timeTexture.free();
+	// timeTexture.free();
 	pointsTexture.free();
 	for(int i = 0; i < 2; i++)
 	{
@@ -350,8 +371,12 @@ void close(){
 		cleanup(short_images[i]);
 	}
 
+	Mix_FreeMusic( calorie );
+    calorie = NULL;
+
 	TTF_Quit();
 	IMG_Quit();
+	Mix_Quit();
 	SDL_Quit();
 
 	if(score!=NULL)
@@ -379,6 +404,8 @@ int main(int, char**)
 		load_buttons();
 
 		load_font();
+
+		load_audio();
 
 		// main loop flag
 		bool quit = false;
@@ -420,12 +447,14 @@ int main(int, char**)
 							{
 								timer.stop();
 								score->~Score();
+								Mix_HaltMusic();
 								// delete score;
 							}
 							else // if timer is stopped
 							{
 								timer.start();
 								score = new Score();
+								Mix_PlayMusic( calorie, -1 );
 								// score->print();
 								// printf("score created successfully");
 							}
@@ -438,10 +467,12 @@ int main(int, char**)
 							if(timer.isPaused())
 							{
 								timer.unpause();
+								Mix_ResumeMusic();
 							}
 							else
 							{
 								timer.pause();
+								Mix_PauseMusic();
 							}
 							break;
 						}

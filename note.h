@@ -39,9 +39,9 @@ class Note
             {
                 state = existing;
             }
-            else if (state==existing && current_time >= disappear_time)
+            else if (state==existing && current_time > disappear_time)
             {
-                state = missed;
+                state = miss;
             }
 
         }
@@ -81,6 +81,10 @@ class Note
             {
                 state = good;
                 points = good_points;
+            }
+            else
+            {
+                state = miss;
             }
             return points;
 

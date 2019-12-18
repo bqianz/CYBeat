@@ -59,6 +59,11 @@ class Score
         }
     }
 
+    Score(std::string filepath)
+    {
+        
+    }
+
     ~Score()
     {
         for (int i = 0; i < col_num; i++)

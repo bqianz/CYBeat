@@ -49,7 +49,7 @@ const Uint32 good_points = 200;
 // note states
 const int irrelevent = -2;
 const int existing = -1;
-const int missed = 0;
+const int miss = 0;
 const int good = 1;
 const int perfect = 2;
 
