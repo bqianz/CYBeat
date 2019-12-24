@@ -152,6 +152,7 @@ public:
         }
     }
 
+
     void update_head_and_feedback(Uint32 current_time)
     {
         int temp = perfect + 1;
@@ -179,22 +180,25 @@ public:
         }
     }
 
-    void handle_event(Uint32 current_time, int i)
-    // handle event in column i
+    // before entering this, it's been checked that timer is started
+    void handle_event(Uint32 current_time, SDL_Event* event)
     {
+        switch (event->key.keysym.sym)
+        {
+            case SDLK_d: int i = 0;
+            case SDLK_f: int i = 1;
+            case SDLK_j: int i = 2;
+            case SDLK_k: int i = 3;
+        }
+
         int head_of_col = head[i];
         int total_of_col = total[i];
 
         if (head_of_col < total_of_col)
         {
-            int head_state = notes[i][head_of_col]->get_state();
-            // printf("head state in col %d is %c\n", i, head_state);
-
-            if (head_state == existing)
-            {
-                // printf("handling head event in column %d\n", i);
-                points += notes[i][head_of_col]->handle_event(current_time);
-                // printf("%d\n", points);
+            // printf("handling head event in column %d\n", i);
+            points += notes[i][head_of_col]->handle_event(current_time, event);
+            // printf("%d\n", points);
             }
         }
     }
@@ -220,10 +224,7 @@ public:
                 int tolerance = std::min(head_col + max_notes, total_col);
                 for (int j = head_col; j < tolerance; j++)
                 {
-                    if (notes[i][j]->get_state() == existing)
-                    {
-                        notes[i][j]->render(renderer);
-                    }
+                    notes[i][j]->render(renderer);
                 }
             }
         }
@@ -234,10 +235,10 @@ public:
         return total[i];
     }
 
-    int get_head_state(int i)
-    {
-        return notes[i][head[i]]->get_state();
-    }
+    // int get_head_state(int i)
+    // {
+    //     return notes[i][head[i]]->get_state();
+    // }
 
     Uint32 get_points()
     {

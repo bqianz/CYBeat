@@ -64,7 +64,7 @@ std::stringstream pointsio;
 Uint32 current_time;
 
 // event handler
-SDL_Event event;
+SDL_Event* event = NULL;
 
 // score
 Score* score = NULL;
@@ -426,16 +426,28 @@ int main(int, char**)
 			}
 
 			// handle events on queue
-			while (SDL_PollEvent(&event)) {
+			while (SDL_PollEvent(event)) {
 
-				if (event.type == SDL_QUIT) {
-					quit = true;
+				if (timer.isStarted() && (event->type == SDL_KEYDOWN || event->type == SDL_KEYUP))
+				{
+					switch (event->key.keysym.sym)
+					{
+						case SDLK_d:
+						case SDLK_f:
+						case SDLK_j:
+						case SDLK_k:
+							score->handle_event(current_time, event);
+					}
 				}
 
-				else if (event.type == SDL_KEYDOWN && event.key.repeat == 0) {
-					
-					switch (event.key.keysym.sym) {
-
+				if (event->type == SDL_QUIT)
+				{
+					quit = true;
+				}
+				else if (event->type == SDL_KEYDOWN && event->key.repeat == 0)
+				{	
+					switch (event->key.keysym.sym)
+					{
 						case SDLK_ESCAPE:
 							quit = true;
 							break;
@@ -473,50 +485,11 @@ int main(int, char**)
 								Mix_PauseMusic();
 							}
 							break;
-						}
-						
-						case SDLK_d:
-						{
-							if(timer.isStarted())
-							{
-								score->handle_event(current_time,0);
-							}
-							// printf("d pressed \n");
-							break;
-						}
-
-						case SDLK_f:
-						{
-							if(timer.isStarted())
-							{
-								score->handle_event(current_time,1);
-							}
-							// printf("f pressed \n");
-							break;
-						}
-
-						case SDLK_j:
-						{
-							if(timer.isStarted())
-							{
-								score->handle_event(current_time,2);
-							}
-							// printf("j pressed \n");
-							break;
-						}
-
-						case SDLK_k:
-						{
-							if(timer.isStarted())
-							{
-								score->handle_event(current_time,3);
-							}
-							// printf("k pressed \n");
-							break;
-						}											
+						}						
 					}
 				}
 			}
+		
 
 			if(timer.isStarted())
 			{
