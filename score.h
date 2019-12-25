@@ -153,27 +153,38 @@ public:
     }
 
 
-    void update_head_and_feedback(Uint32 current_time)
+    void update_head(Uint32 current_time)
+    {
+        for (int i = 0; i < col_num; i++)
+        {
+            if(head[i] < total[i] && notes[i][head[i]]->increment_head(current_time))
+            {
+                head[i]++;
+            }
+        }
+    }
+
+    void update_feedback(Uint32 current_time)
     {
         int temp = perfect + 1;
 
         for (int i = 0; i < col_num; i++)
         {
-            if (head[i] < total[i])
+            int hs = notes[i][head[i]]->get_state(); // head state
+            if (hs > existing)
             {
-                int hs = notes[i][head[i]]->get_state(); // head state
-                if (hs > existing)
-                {
-                    head[i]++;
-                    temp = std::min(temp, hs);
-                }
+                head[i]++;
+                temp = std::min(temp, hs);
             }
         }
-        // temp is the lower limit of head state of all 4 columns
-        // if none of the head of the columns are hit, then temp = perfect+1 (which is meaningless)
-        // existing < temp <= perfect+1
 
-        if (temp <= perfect) // if lower limit is not meaningless, aka a note has been hit
+        // temp is the lower limit of head state of all 4 columns
+        // if none of the head of the columns had their feedback updated,
+        // then temp = perfect+1 (which is meaningless)
+        // existing < temp <= perfect
+
+        if (temp <= perfect && temp > existing) 
+        // if lower limit is not meaningless
         {
             feedback = temp;
             feedback_start_time = current_time;

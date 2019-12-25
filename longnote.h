@@ -145,6 +145,12 @@ public:
         return current_time > release_hit;
     }
 
+    bool update_feedback(Uint32 current_time)
+    {
+        // keydown, keyup, head of rect missed, tail of rect missed
+        
+    }
+
     print()
     {
         printf("press hit = %d, release hit = %d, state = %d \n", press_hit, release_hit, state);
@@ -166,5 +172,5 @@ private:
     SDL_Rect* rect = NULL;
 
     int state = irrelevent;
-}
+};
 #endif
