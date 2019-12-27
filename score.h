@@ -12,15 +12,15 @@
 class Score
 {
 private:
-    Note** notes[col_num];
+    Note **notes[col_num];
     // notes = {col1, col2, col3, col4}
     // *col1 = {note1, note2, ...} (not fixed length)
-    // col1 is of type Note**
-    // note1 is a pointer to a Note object
+    // col1 is of type RegularNote**
+    // note1 is a pointer to a RegularNote object
 
-    int total[col_num] = {0,0,0,0}; // total number of notes for each column
+    int total[col_num] = {0, 0, 0, 0}; // total number of notes for each column
 
-    int head[col_num] = {0,0,0,0}; // current head for each column
+    int head[col_num] = {0, 0, 0, 0}; // current head for each column
 
     Uint32 points = 0; // numerical score
 
@@ -28,7 +28,7 @@ private:
     Uint32 feedback_start_time = 0;
 
 public:
-    //Initialize
+    //Initialize sample score
     Score()
     {
         for (int i = 0; i < col_num; i++)
@@ -38,16 +38,16 @@ public:
 
             total[i] = n_col;
 
-            notes[i] = new Note*[n_col]();
+            notes[i] = new Note *[n_col]();
 
             for (int j = 0; j < n_col; j++)
             {
                 // printf("note %d initializing\n", i);
                 notes[i][j] = new Note(i, 2000 + j * 500);
-                // don't do notes[i] = &Note(), cannot take address of a temporary object
-                // don't do *notes[i] = Note(current_time + 2000 + i*500), complies but crashes.
-                // If use "new", then Note object exists until deleted
-                // If don't use "new", Note object only exists in current scope
+                // don't do notes[i] = &RegularNote(), cannot take address of a temporary object
+                // don't do *notes[i] = RegularNote(current_time + 2000 + i*500), complies but crashes.
+                // If use "new", then RegularNote object exists until deleted
+                // If don't use "new", RegularNote object only exists in current scope
 
                 // printf("note %d initialized\n", i);
             }
@@ -62,36 +62,42 @@ public:
         int i;
         std::ifstream infile(filepath);
         std::string line;
+        int temp[col_num] = {}; // all entries set to zero
+        int prev_i;
+        Uint32 prev_time;
 
         // find out how how many notes in each column
         while (std::getline(infile, line))
         {
-            std::size_t found = (line.find("点") == std::string::npos)? line.find("按") : line.find("点");
+            std::size_t found = (line.find("点") == std::string::npos) ? ((line.find("按") == std::string::npos) ? line.find("滑") : line.find("按"))
+                                                                       : line.find("点");
+
             if (found != std::string::npos)
             {
-                std::istringstream iss(line.substr(found+4));
+                std::istringstream iss(line.substr(found + 4));
                 iss >> time >> i;
                 total[i]++;
             }
         }
+
         // make arrays of given sizes
-        for(int i = 0 ; i < col_num; i++)
+        for (int i = 0; i < col_num; i++)
         {
-            notes[i] = new Note*[total[i]]();
+            notes[i] = new Note *[total[i]]();
         }
 
         // reset file stream
         infile.clear();
         infile.seekg(0, std::ios::beg);
-        // make notes
-        int temp[] = {0,0,0,0};
-        // std::getline(infile, line);
+
         while (std::getline(infile, line))
         {
-            std::size_t found = (line.find("点") == std::string::npos)? line.find("按") : line.find("点");
-            if (found != std::string::npos)
+            std::size_t press_found = (line.find("点") == std::string::npos) ? line.find("按") : line.find("点");
+
+            // if single note or pressing, create regular note
+            if (press_found != std::string::npos)
             {
-                std::istringstream iss(line.substr(found+4));
+                std::istringstream iss(line.substr(press_found + 4));
                 iss >> time >> i;
                 // std::cout<<time<<"\n";
 
@@ -99,8 +105,33 @@ public:
                 notes[i][j] = new Note(i, time);
 
                 temp[i]++;
+                prev_i = i;
+                prev_time = time;
+            }
+
+            // if possible release note
+            else if (line.find("滑") != std::string::npos)
+            {
+                std::istringstream iss(line.substr(line.find("滑") + 4));
+                iss >> time >> i;
+
+                int j = temp[i]; // current index in column i
+
+                if (i == prev_i)
+                {
+                    notes[i][j] = new ReleaseNote(i, prev_time, time);
+                }
+                else
+                {
+                    notes[i][j] = new Note(i, time);
+                }
+
+                temp[i]++;
+                prev_i = i;
+                prev_time = time;
             }
         }
+        printf("score created\n");
     }
 
     ~Score()
@@ -138,13 +169,19 @@ public:
             int total_of_col = total[i];
             if (head_of_col < total_of_col) // if we haven't finished going through the score
             {
-                // printf("updating score");
                 int tolerance = std::min(head_of_col + max_notes, total_of_col);
-
                 for (int j = head_of_col; j < tolerance; j++)
                 {
-                    // printf("updating note %d", i);
-                    notes[i][j]->update_state(current_time);
+                    // if note is of type ReleaseNote
+                    if (notes[i][j]->get_type() == 'r')
+                    {
+                        notes[i][j]->update_state_without_event(current_time, notes[i][j - 1]->get_state());
+                    }
+                    else
+                    {
+                        notes[i][j]->update_state_without_event(current_time);
+                    }
+
                     notes[i][j]->update_position(current_time);
                 }
                 // printf("updated state according to time and position\n");
@@ -152,39 +189,27 @@ public:
         }
     }
 
-
-    void update_head(Uint32 current_time)
-    {
-        for (int i = 0; i < col_num; i++)
-        {
-            if(head[i] < total[i] && notes[i][head[i]]->increment_head(current_time))
-            {
-                head[i]++;
-            }
-        }
-    }
-
-    void update_feedback(Uint32 current_time)
+    void update_head_and_feedback(Uint32 current_time)
     {
         int temp = perfect + 1;
 
         for (int i = 0; i < col_num; i++)
         {
-            int hs = notes[i][head[i]]->get_state(); // head state
-            if (hs > existing)
+            if (head[i] < total[i])
             {
-                head[i]++;
-                temp = std::min(temp, hs);
+                int hs = notes[i][head[i]]->get_state(); // head state
+                if (hs > existing)
+                {
+                    head[i]++;
+                    temp = std::min(temp, hs);
+                }
             }
         }
-
         // temp is the lower limit of head state of all 4 columns
-        // if none of the head of the columns had their feedback updated,
-        // then temp = perfect+1 (which is meaningless)
-        // existing < temp <= perfect
+        // if none of the head of the columns are hit, then temp = perfect+1 (which is meaningless)
+        // existing < temp <= perfect+1
 
-        if (temp <= perfect && temp > existing) 
-        // if lower limit is not meaningless
+        if (temp <= perfect) // if lower limit is not meaningless, aka a note has been hit
         {
             feedback = temp;
             feedback_start_time = current_time;
@@ -192,26 +217,81 @@ public:
     }
 
     // before entering this, it's been checked that timer is started
-    void handle_event(Uint32 current_time, SDL_Event* event)
+    void handle_event(Uint32 current_time, SDL_Event& event)
     {
-        switch (event->key.keysym.sym)
+        int i;
+        // event is guaranteed to be one of these four keys
+        switch (event.key.keysym.sym)
         {
-            case SDLK_d: int i = 0;
-            case SDLK_f: int i = 1;
-            case SDLK_j: int i = 2;
-            case SDLK_k: int i = 3;
+            case SDLK_d: i = 0; break;
+            case SDLK_f: i = 1; break;
+            case SDLK_j: i = 2; break;
+            case SDLK_k: i = 3; break;
         }
 
-        int head_of_col = head[i];
-        int total_of_col = total[i];
-
-        if (head_of_col < total_of_col)
+        if (head[i] < total[i]) // if head index is valid
         {
-            // printf("handling head event in column %d\n", i);
-            points += notes[i][head_of_col]->handle_event(current_time, event);
-            // printf("%d\n", points);
+            if (notes[i][head[i]]->get_type() == 'r') // if note is of type ReleaseNote
+            {
+                // if prev note not missed and event is key release
+                // doesn't check for state of release note,in case hold is really long
+                // that is, tail of note is off screen, but still need to handle if you let go too early
+                // if state is good/perfect, then head increment to next note, no need to worry (??)
+                if (notes[i][head[i] - 1]->get_state() != miss && event.type == SDL_KEYUP)
+                {
+                    points += notes[i][head[i]]->handle_event(current_time);
+                }
+            }
+
+            else // regular note
+            {
+                if (notes[i][head[i]]->get_state() == existing && event.type == SDL_KEYDOWN && event.key.repeat == 0)
+                {
+                    points += notes[i][head[i]]->handle_event(current_time);
+                }
             }
         }
+    }
+
+    void render(Uint32 current_time, SDL_Renderer *renderer)
+    {
+        // render block
+        for (int i = 0; i < col_num; i++)
+        {
+            if (head[i] < total[i])
+            {
+                int tolerance = std::min(head[i] + max_notes, total[i]);
+                for (int j = head[i]; j < tolerance; j++)
+                {
+                    if (notes[i][j]->get_type() == 'r') // if type ReleaseNote
+                    {
+                        int prev = notes[i][j - 1]->get_state();
+                        if (prev > irrelevent && prev != miss) // if beginning has appeared and wasn't missed
+                        {
+                            notes[i][j]->render_block(renderer);
+                        }
+                    }
+                }
+            }
+        }
+
+        // render notes
+        for (int i = 0; i < col_num; i++)
+        {
+            if (head[i] < total[i])
+            {
+                int tolerance = std::min(head[i] + max_notes, total[i]);
+                for (int j = head[i]; j < tolerance; j++)
+                {
+                    notes[i][j]->render(renderer);
+                }
+            }
+        }
+    }
+
+    Uint32 get_points()
+    {
+        return points;
     }
 
     int get_feedback()
@@ -222,38 +302,6 @@ public:
     Uint32 get_feedback_start_time()
     {
         return feedback_start_time;
-    }
-
-    void render(Uint32 current_time, SDL_Renderer *renderer)
-    {
-        for (int i = 0; i < col_num; i++)
-        {
-            int head_col = head[i];
-            int total_col = total[i];
-            if (head_col < total_col)
-            {
-                int tolerance = std::min(head_col + max_notes, total_col);
-                for (int j = head_col; j < tolerance; j++)
-                {
-                    notes[i][j]->render(renderer);
-                }
-            }
-        }
-    }
-
-    int get_total(int i)
-    {
-        return total[i];
-    }
-
-    // int get_head_state(int i)
-    // {
-    //     return notes[i][head[i]]->get_state();
-    // }
-
-    Uint32 get_points()
-    {
-        return points;
     }
 };
 

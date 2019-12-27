@@ -64,7 +64,7 @@ std::stringstream pointsio;
 Uint32 current_time;
 
 // event handler
-SDL_Event* event = NULL;
+SDL_Event event;
 
 // score
 Score* score = NULL;
@@ -407,6 +407,7 @@ int main(int, char**)
 
 		load_audio();
 
+
 		// main loop flag
 		bool quit = false;
 
@@ -426,11 +427,11 @@ int main(int, char**)
 			}
 
 			// handle events on queue
-			while (SDL_PollEvent(event)) {
+			while (SDL_PollEvent(&event)) {
 
-				if (timer.isStarted() && (event->type == SDL_KEYDOWN || event->type == SDL_KEYUP))
+				if (timer.isStarted() && (event.type == SDL_KEYDOWN || event.type == SDL_KEYUP))
 				{
-					switch (event->key.keysym.sym)
+					switch (event.key.keysym.sym)
 					{
 						case SDLK_d:
 						case SDLK_f:
@@ -440,18 +441,20 @@ int main(int, char**)
 					}
 				}
 
-				if (event->type == SDL_QUIT)
+				if (event.type == SDL_QUIT)
 				{
 					quit = true;
 				}
-				else if (event->type == SDL_KEYDOWN && event->key.repeat == 0)
+				else if (event.type == SDL_KEYDOWN && event.key.repeat == 0)
 				{	
-					switch (event->key.keysym.sym)
+					switch (event.key.keysym.sym)
 					{
 						case SDLK_ESCAPE:
+						{
 							quit = true;
 							break;
-						
+						}
+
 						//start stop
 						case SDLK_s:
 						{
@@ -489,6 +492,7 @@ int main(int, char**)
 					}
 				}
 			}
+
 		
 
 			if(timer.isStarted())

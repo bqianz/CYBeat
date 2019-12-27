@@ -40,6 +40,16 @@ const int notes_b = 0;
 const int notes_a = 255;
 const int notes_thickness = 10;
 
+const int block_r = 0;
+const int block_g = 0;
+const int block_b = 0;
+const int block_a = 127;
+
+const int release_r = 255;
+const int release_g = 255;
+const int release_b = 255;
+const int release_a = 255;
+
 const Uint32 perfect_range = 100; // 200 milliseconds
 const Uint32 good_range = 200;
 const Uint32 bad_range = 300;

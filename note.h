@@ -7,8 +7,6 @@
 #include <SDL.h>
 #include <iostream>
 
-// goal_height
-// SCREEN_HEIGHT
 class Note
 {
 protected:
@@ -19,14 +17,17 @@ protected:
     Uint32 finish;
 
     SDL_Rect *rect;
+    int position;
 
     int state;
+    char type;
 
 public:
     Note(){};
 
     Note(int col_num, Uint32 given_time, float given_speed = 0.5)
     {
+        type = 'n'; // n for note
         speed = given_speed;
         hit = given_time;
         takeoff = hit - goal_height / speed;
@@ -37,10 +38,13 @@ public:
         rect->w = col_width - bd_thickness;
         rect->h = notes_thickness;
 
+        position = 0;
+
         state = irrelevent;
     }
 
-    void update_state_without_event(Uint32 current_time)
+    // version with one argument
+    virtual void update_state_without_event(Uint32 current_time, int prev = irrelevent)
     {
         if (state == irrelevent && current_time >= takeoff)
         {
@@ -56,52 +60,43 @@ public:
     {
         if (state == existing)
         {
-            rect->y = (current_time - takeoff) * speed;
+            position = (current_time - takeoff) * speed;
         }
     }
 
-    virtual Uint32 handle_event(Uint32 current_time, SDL_Event *event)
+    Uint32 handle_event(Uint32 current_time)
     {
-        // printf("%lu\n",current_time);
-        // printf("%lu\n",perfect_hit_time);
-
-        // if time of press is within perfect_range of perfect_hit_time
-        // if perfect_hit_time - perfect_range < current_time < perfect_hit_time + perfect_range
-        // # TODO: make sure perfect_hit_time - perfect_range isn't negative??
-        // printf("pressing key\n");
-
-        Uint32 points = 0;
-
-        if (state == existing && event->type == SDL_KEYDOWN && event->key.repeat == 0)
+        if (hit - perfect_range < current_time &&
+            current_time < hit + perfect_range)
         {
-            if (hit - perfect_range < current_time &&
-                current_time < hit + perfect_range)
-            {
-                state = perfect;
-                points = points_array[state];
-            }
-            else if (hit - good_range < current_time &&
-                     current_time < hit + good_range)
-            {
-                state = good;
-                points = points_array[state];
-            }
-            else if (hit - bad_range < current_time &&
-                     current_time < hit + bad_range)
-            {
-                state = miss;
-                points = points_array[state];
-            }
+            state = perfect;
+            return points_array[state];
         }
+        else if (hit - good_range < current_time &&
+                    current_time < hit + good_range)
+        {
+            state = good;
+            return points_array[state];
+        }
+        else if (hit - bad_range < current_time &&
+                    current_time < hit + bad_range)
+        {
+            state = miss;
+            return points_array[state];
+        }
+        else
+        {
+            return 0;
+        }
+    }  
 
-        return points;
-    }
-
-    virtual void render(SDL_Renderer *renderer, Uint32 current_time) // render a single note
+    virtual void render(SDL_Renderer *renderer)
     {
         if (state == existing)
         {
             SDL_SetRenderDrawColor(renderer, notes_r, notes_g, notes_b, notes_a);
+
+            rect->y = position - goal_thickness/2;
             if (SDL_RenderFillRect(renderer, rect))
             {
                 logSDLError(std::cout, "RenderFillRect note rect");
@@ -118,10 +113,13 @@ public:
         printf("hit time = %d, state = %d \n", hit, state);
     }
 
-    virtual bool increment_head(Uint32 current_time) { return state > existing; }
-
     int get_state() { return state; }
+
+    char get_type() {return type;}
+
+    virtual void render_block(SDL_Renderer *renderer){if(false){printf("ha");}}
 };
+
 
 class ReleaseNote : public Note
 {
@@ -131,9 +129,10 @@ private:
     int state_block;
 
 public:
-    PressNote(int col_num, Uint32 given_press_hit, Uint32 given_release_hit, float given_speed = 0.5)
+    ReleaseNote(int col_num, Uint32 given_press_hit, Uint32 given_release_hit, float given_speed = 0.5)
     : Note(col_num, given_release_hit, given_speed)
     {
+        type = 'r'; // r for release
         if(given_press_hit < given_release_hit)
         {
             press = given_press_hit;
@@ -151,109 +150,53 @@ public:
 
     void update_position(Uint32 current_time)
     {
-        Note::update_position(current_time);
-
-        if (state > irrelevent)
+        if (state < miss) // if existing or irrelevent
         {
-            rect_block->y = (current_time - takeoff) * speed;
+            position = (current_time - takeoff) * speed;
         }
     }
 
-
-    void handle_event(Uint32 current_time, SDL_Event *event)
+    void update_state_without_event(Uint32 current_time, int prev)
     {
-        Uint32 points = 0;
-
-        // first press
-        if (state == existing && event->type == SDL_KEYDOWN && event->key.repeat == 0)
+        if (prev == miss)
+        {   
+            state = miss;
+        }
+        else
         {
-            if (press_hit - perfect_range < current_time &&
-                current_time < press_hit + perfect_range)
-            {
-                state = perfect;
-                points = points_array[state];
-            }
-
-            else if (press_hit - good_range < current_time &&
-                    current_time < press_hit + good_range)
-            {
-                state = good;
-                points = points_array[state];
-            }
-            else if (press_hit - bad_range < current_time &&
-                    current_time < press_hit + bad_range)
-            {
-                state = miss;
-                points = points_array[state];
-            }
+            Note::update_state_without_event(current_time);
         }
 
-        // release
-        else if (state > miss && event->type == SDL_KEYUP)
-        {
-            if (release_hit - perfect_range < current_time &&
-                current_time < release_hit + perfect_range)
-            {
-                state = std::min(perfect,state);
-                points = points_array[state];
-            }
-            else if (release_hit - good_range < current_time &&
-                    current_time < release_hit + good_range)
-            {
-                state = good;
-                points = points_array[state];
-            }
-            printf("key released");
-        }
-
-        return points;
     }
 
-    render(SDL_Renderer *renderer, Uint32 current_time) // render a single note
+    void render_block(SDL_Renderer *renderer)
     {
-        // state == existing, good, perfect : full opacity
-        // state == miss : half opacity
-        // top of rectangle reaches finish: don't render (??)
-
-        // if bottom of rectangle reached start line and top of rectangle hasn't reached finish
-        if(state > irrelevent && current_time <= release_disappear)
+        // render block
+        if(state !=miss)
         {
-            int alpha;
-            if(state == miss) {alpha = notes_a / 2;}
-            else {alpha = notes_a;}
+            SDL_SetRenderDrawColor(renderer, block_r, block_g, block_b, block_a);
+            rect_block->y = position;
+            if (SDL_RenderFillRect(renderer, rect_block))
+            {
+                logSDLError(std::cout, "RenderFillRect block rect");
+            }
+        }
+    }
 
-            SDL_SetRenderDrawColor(renderer, notes_r, notes_g, notes_b, alpha);
+    void render(SDL_Renderer *renderer) // render a single note
+    {   
+        // render release note
+        if (state == existing)
+        {
+            SDL_SetRenderDrawColor(renderer, release_r, release_g, release_b, release_a);
+            rect->y = position - goal_thickness/2;
+
             if (SDL_RenderFillRect(renderer, rect))
             {
-                logSDLError(std::cout, "RenderFillRect note rect");
-                // cleanup(window, renderer);
-                // SDL_Quit();
-                // IMG_Quit();
-                // return 1;
+                logSDLError(std::cout, "RenderFillRect release rect");
             }
         }
     }
-
-
-    bool increment_head(Uint32 current_time)
-    {
-        return current_time > release_hit;
-    }
-
-    bool update_feedback(Uint32 current_time)
-    {
-        // keydown, keyup, head of rect missed, tail of rect missed
-        
-    }
-
-    print()
-    {
-        printf("press hit = %d, release hit = %d, state = %d \n", press_hit, release_hit, state);
-    }
-
-    // inherits render function as is
-
-
 };
 
 
