@@ -48,7 +48,7 @@ TTF_Font* font_big = NULL;
 Mix_Music* calorie = NULL;
 
 //Text textures
-// LTexture timeTexture;
+LTexture timeTexture;
 LTexture pointsTexture;
 LTexture feedbackTextures[3];
 LTexture promptTextures[2];
@@ -343,7 +343,7 @@ bool load_font()
 
 void close(){
 	// free font textures
-	// timeTexture.free();
+	timeTexture.free();
 	pointsTexture.free();
 	for(int i = 0; i < 2; i++)
 	{
@@ -467,9 +467,7 @@ int main(int, char**)
 							}
 							else // if timer is stopped
 							{
-								score = new Score(true);
-								score->print();
-								// score = new Score(getResourcePath() + "calorie.txt");
+								score = new Score(getResourcePath() + "calorie.txt");
 								timer.start();
 								Mix_PlayMusic( calorie, -1 );
 							}
@@ -590,14 +588,13 @@ int main(int, char**)
 			
 
 			// time texture
-			// timeio.str("");
-			// timeio << "Seconds: " << current_time/1000.f;
-			// text to texture
-			// if( !timeTexture.loadFromRenderedText( timeio.str().c_str(), textColor,font ) )
-			// {
-			// 	printf( "Unable to render time texture!\n" );
-			// }
-			// timeTexture.render( 0, SCREEN_HEIGHT/2 );
+			timeio.str("");
+			timeio << "Seconds: " << current_time/1000.f;
+			if( !timeTexture.loadFromRenderedText( timeio.str().c_str(), textColor,font ) )
+			{
+				printf( "Unable to render time texture!\n" );
+			}
+			timeTexture.render( 0, SCREEN_HEIGHT/2, renderer);
 
 			SDL_RenderPresent(renderer);
 		}

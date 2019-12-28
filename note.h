@@ -159,6 +159,17 @@ public:
                 rect_block.h = original_height;
             }
             
+            // make rectangle cut off at goal line
+
+            if(rect_block.y > goal_height)
+            {
+                rect_block.h = 0;
+            }
+            else if(rect_block.y + rect_block.h > goal_height)
+            {
+                rect_block.h = goal_height - rect_block.y;
+            }
+            
         }
     }
 

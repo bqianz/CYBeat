@@ -18,7 +18,7 @@ private:
     // col1 is of type RegularNote**
     // note1 is a pointer to a RegularNote object
 
-    int total[col_num] = {0, 0, 0, 0}; // total number of notes for each column
+    int total[col_num] = {}; // total number of notes for each column
 
     int head[col_num] = {0, 0, 0, 0}; // current head for each column
 
@@ -75,10 +75,11 @@ public:
         int i;
         std::ifstream infile(filepath);
         std::string line;
-        int temp[col_num] = {}; // all entries set to zero
         int prev_i;
         Uint32 prev_time;
-
+        char prev_type = 'n';
+        
+        int total_upper_limit[col_num] = {};
         // find out how how many notes in each column
         while (std::getline(infile, line))
         {
@@ -89,14 +90,14 @@ public:
             {
                 std::istringstream iss(line.substr(found + 4));
                 iss >> time >> i;
-                total[i]++;
+                total_upper_limit[i]++;
             }
         }
 
         // make arrays of given sizes
         for (int i = 0; i < col_num; i++)
         {
-            notes[i] = new Note *[total[i]]();
+            notes[i] = new Note *[total_upper_limit[i]]();
         }
 
         // reset file stream
@@ -114,36 +115,35 @@ public:
                 iss >> time >> i;
                 // std::cout<<time<<"\n";
 
-                int j = temp[i];
+                int j = total[i];
                 notes[i][j] = new Note(i, time);
-                temp[i]++;
+                total[i]++;
                 prev_i = i;
                 prev_time = time;
+                prev_type = 'n';
             }
 
+
+            // ignore 开始 + 滑 notes
+
             // if possible release note
-            else if (line.find("滑") != std::string::npos)
+            else if (line.find("滑") != std::string::npos && line.find("开始") == std::string::npos
+            && prev_type == 'n')
             {
                 std::istringstream iss(line.substr(line.find("滑") + 4));
                 iss >> time >> i;
 
-                int j = temp[i]; // current index in column i
-
                 if (i == prev_i)
                 {
+                    int j = total[i]; // current index in column i
                     notes[i][j] = new ReleaseNote(i, prev_time, time);
+                    prev_type = 'r';
+                    total[i]++;
+                    prev_i = i;
+                    prev_time = time;
                 }
-                else
-                {
-                    notes[i][j] = new Note(i, time);
-                }
-
-                temp[i]++;
-                prev_i = i;
-                prev_time = time;
             }
         }
-        printf("score created\n");
     }
 
     ~Score()
@@ -242,7 +242,7 @@ public:
             case SDLK_j: i = 2; break;
             case SDLK_k: i = 3; break;
         }
-        
+
         if (head[i] < total[i]) // if head index is valid
         {
             if (notes[i][head[i]]->get_type() == 'r') // if note is of type ReleaseNote
