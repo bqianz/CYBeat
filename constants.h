@@ -43,7 +43,7 @@ const int notes_thickness = 10;
 const int block_r = 0;
 const int block_g = 0;
 const int block_b = 0;
-const int block_a = 127;
+const int block_a = 100;
 
 const int release_r = 255;
 const int release_g = 255;

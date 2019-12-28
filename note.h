@@ -16,8 +16,7 @@ protected:
     Uint32 takeoff;
     Uint32 finish;
 
-    SDL_Rect *rect;
-    int position;
+    SDL_Rect rect;
 
     int state;
     char type;
@@ -33,12 +32,10 @@ public:
         takeoff = hit - goal_height / speed;
         finish = takeoff + SCREEN_HEIGHT / speed;
 
-        rect->x = col_num * col_width;
-        rect->y = 0;
-        rect->w = col_width - bd_thickness;
-        rect->h = notes_thickness;
-
-        position = 0;
+        rect.x = col_num * col_width;
+        rect.y = 0;
+        rect.w = col_width - bd_thickness;
+        rect.h = notes_thickness;
 
         state = irrelevent;
     }
@@ -56,15 +53,15 @@ public:
         }
     }
 
-    virtual void update_position(Uint32 current_time)
+    virtual void update_position(Uint32 current_time, int prev = irrelevent)
     {
-        if (state == existing)
+        if(state==existing) // makes sure current_time >= takeoff
         {
-            position = (current_time - takeoff) * speed;
+            rect.y = (current_time - takeoff) * speed;
         }
     }
 
-    Uint32 handle_event(Uint32 current_time)
+    virtual Uint32 handle_event(Uint32 current_time)
     {
         if (hit - perfect_range < current_time &&
             current_time < hit + perfect_range)
@@ -73,13 +70,13 @@ public:
             return points_array[state];
         }
         else if (hit - good_range < current_time &&
-                    current_time < hit + good_range)
+                 current_time < hit + good_range)
         {
             state = good;
             return points_array[state];
         }
         else if (hit - bad_range < current_time &&
-                    current_time < hit + bad_range)
+                 current_time < hit + bad_range)
         {
             state = miss;
             return points_array[state];
@@ -88,7 +85,7 @@ public:
         {
             return 0;
         }
-    }  
+    }
 
     virtual void render(SDL_Renderer *renderer)
     {
@@ -96,8 +93,7 @@ public:
         {
             SDL_SetRenderDrawColor(renderer, notes_r, notes_g, notes_b, notes_a);
 
-            rect->y = position - goal_thickness/2;
-            if (SDL_RenderFillRect(renderer, rect))
+            if (SDL_RenderFillRect(renderer, &rect))
             {
                 logSDLError(std::cout, "RenderFillRect note rect");
                 // cleanup(window, renderer);
@@ -110,37 +106,33 @@ public:
 
     void print()
     {
-        printf("hit time = %d, state = %d \n", hit, state);
+        printf("hit time = %d, state = %d, type = %c\n", hit, state, type);
     }
 
     int get_state() { return state; }
 
-    char get_type() {return type;}
+    char get_type() { return type; }
 
-    virtual void render_block(SDL_Renderer *renderer){if(false){printf("ha");}}
+    virtual void render_block(SDL_Renderer *renderer, int prev = irrelevent){}
 };
-
 
 class ReleaseNote : public Note
 {
 private:
-    SDL_Rect* rect_block;
-    Uint32 press;
-    int state_block;
+    SDL_Rect rect_block;
+    int original_height;
 
 public:
     ReleaseNote(int col_num, Uint32 given_press_hit, Uint32 given_release_hit, float given_speed = 0.5)
-    : Note(col_num, given_release_hit, given_speed)
+        : Note(col_num, given_release_hit, given_speed)
     {
         type = 'r'; // r for release
-        if(given_press_hit < given_release_hit)
+        if (given_press_hit < given_release_hit)
         {
-            press = given_press_hit;
+            rect_block.x = col_num * col_width;
+            rect_block.w = col_width - bd_thickness;
 
-            rect_block->x = col_num * col_width;
-            rect_block->y = 0;
-            rect_block->w = col_width - bd_thickness;
-            rect_block->h = speed * (given_release_hit - given_press_hit);
+            original_height = speed * (given_release_hit - given_press_hit);
         }
         else
         {
@@ -148,56 +140,89 @@ public:
         }
     }
 
-    void update_position(Uint32 current_time)
+    void update_position(Uint32 current_time, int prev = irrelevent)
     {
-        if (state < miss) // if existing or irrelevent
+        //update note rect
+        Note::update_position(current_time);
+
+        //update block rect
+        if(state!=miss && prev > irrelevent)
         {
-            position = (current_time - takeoff) * speed;
+            if(current_time < takeoff)
+            {
+                rect_block.y = 0;
+                rect_block.h = original_height - (takeoff-current_time) * speed;
+            }
+            else
+            {
+                rect_block.y = (current_time - takeoff) * speed;
+                rect_block.h = original_height;
+            }
+            
         }
     }
 
     void update_state_without_event(Uint32 current_time, int prev)
     {
         if (prev == miss)
-        {   
+        {
             state = miss;
         }
+
         else
         {
             Note::update_state_without_event(current_time);
         }
-
     }
 
-    void render_block(SDL_Renderer *renderer)
+    void render_block(SDL_Renderer *renderer,int prev = irrelevent)
     {
-        // render block
-        if(state !=miss)
+        if (state != miss && prev > irrelevent)
         {
+            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
             SDL_SetRenderDrawColor(renderer, block_r, block_g, block_b, block_a);
-            rect_block->y = position;
-            if (SDL_RenderFillRect(renderer, rect_block))
+            if (SDL_RenderFillRect(renderer, &rect_block))
             {
                 logSDLError(std::cout, "RenderFillRect block rect");
             }
+            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
         }
     }
 
-    void render(SDL_Renderer *renderer) // render a single note
-    {   
+    void render(SDL_Renderer *renderer)
+    {
         // render release note
         if (state == existing)
         {
             SDL_SetRenderDrawColor(renderer, release_r, release_g, release_b, release_a);
-            rect->y = position - goal_thickness/2;
 
-            if (SDL_RenderFillRect(renderer, rect))
+            if (SDL_RenderFillRect(renderer, &rect))
             {
                 logSDLError(std::cout, "RenderFillRect release rect");
             }
         }
     }
-};
 
+    Uint32 handle_event(Uint32 current_time)
+    {
+        if (hit - perfect_range < current_time &&
+            current_time < hit + perfect_range)
+        {
+            state = perfect;
+            return points_array[state];
+        }
+        else if (hit - good_range < current_time &&
+                 current_time < hit + good_range)
+        {
+            state = good;
+            return points_array[state];
+        }
+        else
+        {
+            state = miss;
+            return points_array[state];
+        }
+    }
+};
 
 #endif

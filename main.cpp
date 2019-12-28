@@ -467,7 +467,9 @@ int main(int, char**)
 							}
 							else // if timer is stopped
 							{
-								score = new Score(getResourcePath() + "calorie.txt");
+								score = new Score(true);
+								score->print();
+								// score = new Score(getResourcePath() + "calorie.txt");
 								timer.start();
 								Mix_PlayMusic( calorie, -1 );
 							}
@@ -492,8 +494,6 @@ int main(int, char**)
 					}
 				}
 			}
-
-		
 
 			if(timer.isStarted())
 			{

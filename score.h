@@ -55,6 +55,19 @@ public:
         }
     }
 
+    // constructor to test simple long note
+    Score(bool arg)
+    {
+        if(arg)
+        {
+            //make long note in 3rd column
+            total[0] = 2;
+            notes[0] = new Note*[2]();
+            notes[0][0] = new Note(0, 2000);
+            notes[0][1] = new ReleaseNote(0,2000,4000);
+        }
+    }
+
     Score(std::string filepath)
     {
 
@@ -103,7 +116,6 @@ public:
 
                 int j = temp[i];
                 notes[i][j] = new Note(i, time);
-
                 temp[i]++;
                 prev_i = i;
                 prev_time = time;
@@ -175,14 +187,15 @@ public:
                     // if note is of type ReleaseNote
                     if (notes[i][j]->get_type() == 'r')
                     {
-                        notes[i][j]->update_state_without_event(current_time, notes[i][j - 1]->get_state());
+                        int prev = notes[i][j - 1]->get_state();
+                        notes[i][j]->update_state_without_event(current_time, prev);
+                        notes[i][j]->update_position(current_time,prev);
                     }
                     else
                     {
                         notes[i][j]->update_state_without_event(current_time);
-                    }
-
-                    notes[i][j]->update_position(current_time);
+                        notes[i][j]->update_position(current_time);
+                    }   
                 }
                 // printf("updated state according to time and position\n");
             }
@@ -198,6 +211,7 @@ public:
             if (head[i] < total[i])
             {
                 int hs = notes[i][head[i]]->get_state(); // head state
+
                 if (hs > existing)
                 {
                     head[i]++;
@@ -228,7 +242,7 @@ public:
             case SDLK_j: i = 2; break;
             case SDLK_k: i = 3; break;
         }
-
+        
         if (head[i] < total[i]) // if head index is valid
         {
             if (notes[i][head[i]]->get_type() == 'r') // if note is of type ReleaseNote
@@ -266,10 +280,7 @@ public:
                     if (notes[i][j]->get_type() == 'r') // if type ReleaseNote
                     {
                         int prev = notes[i][j - 1]->get_state();
-                        if (prev > irrelevent && prev != miss) // if beginning has appeared and wasn't missed
-                        {
-                            notes[i][j]->render_block(renderer);
-                        }
+                        notes[i][j]->render_block(renderer,prev);
                     }
                 }
             }
