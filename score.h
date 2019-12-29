@@ -58,13 +58,13 @@ public:
     // constructor to test simple long note
     Score(bool arg)
     {
-        if(arg)
+        if (arg)
         {
             //make long note in 3rd column
             total[0] = 2;
-            notes[0] = new Note*[2]();
+            notes[0] = new Note *[2]();
             notes[0][0] = new Note(0, 2000);
-            notes[0][1] = new ReleaseNote(0,2000,4000);
+            notes[0][1] = new ReleaseNote(0, 2000, 4000);
         }
     }
 
@@ -72,77 +72,126 @@ public:
     {
 
         Uint32 time;
+        Uint32 hold;
         int i;
         std::ifstream infile(filepath);
         std::string line;
-        int prev_i;
-        Uint32 prev_time;
-        char prev_type = 'n';
-        
-        int total_upper_limit[col_num] = {};
-        // find out how how many notes in each column
-        while (std::getline(infile, line))
-        {
-            std::size_t found = (line.find("点") == std::string::npos) ? ((line.find("按") == std::string::npos) ? line.find("滑") : line.find("按"))
-                                                                       : line.find("点");
 
-            if (found != std::string::npos)
-            {
-                std::istringstream iss(line.substr(found + 4));
-                iss >> time >> i;
-                total_upper_limit[i]++;
-            }
-        }
+        // int total_upper_limit[col_num] = {};
+        // // find out how how many notes in each column
+        // while (std::getline(infile, line))
+        // {
+        //     std::size_t found = (line.find("点") == std::string::npos) ? ((line.find("按") == std::string::npos) ? line.find("滑") : line.find("按"))
+        //                                                                : line.find("点");
+
+        //     if (found != std::string::npos)
+        //     {
+        //         std::istringstream iss(line.substr(found + 4));
+        //         iss >> time >> i;
+        //         total_upper_limit[i]++;
+        //     }
+        // }
+
+        // reset file stream
+        // infile.clear();
+        // infile.seekg(0, std::ios::beg);
 
         // make arrays of given sizes
         for (int i = 0; i < col_num; i++)
         {
-            notes[i] = new Note *[total_upper_limit[i]]();
+            notes[i] = new Note *[total_notes_per_column_upper_limit]();
         }
-
-        // reset file stream
-        infile.clear();
-        infile.seekg(0, std::ios::beg);
 
         while (std::getline(infile, line))
         {
-            std::size_t press_found = (line.find("点") == std::string::npos) ? line.find("按") : line.find("点");
-
             // if single note or pressing, create regular note
-            if (press_found != std::string::npos)
+            if (line.find("点") != std::string::npos)
             {
-                std::istringstream iss(line.substr(press_found + 4));
+                std::istringstream iss(line.substr(line.find("点") + 4));
                 iss >> time >> i;
-                // std::cout<<time<<"\n";
-
-                int j = total[i];
-                notes[i][j] = new Note(i, time);
+                
                 total[i]++;
-                prev_i = i;
-                prev_time = time;
-                prev_type = 'n';
+                int index = total[i];
+                // n1, n2, n3, null (index)
+
+                // if index > 0, then n3 is guranteed to exist
+                while (index > 0 && time < notes[i][index-1]->get_time())
+                {
+                    notes[i][index] = notes[i][index-1]; // address of a note
+                    // n1, n2, n3, n3(index)
+                    
+                    index--;
+                    // n1, n2, n3(index), n3
+
+                    if (notes[i][index]->get_type() == 'r') // then n2 is guaranteed to exist
+                    {
+                        notes[i][index] = notes[i][index-1];
+                        // n1, n2, n2(index), n3
+
+                        index--;
+                        // n1, n2(index), n2, n3
+                    }
+                }
+
+                notes[i][index] = new Note(i, time);
             }
 
-
-            // ignore 开始 + 滑 notes
-
-            // if possible release note
-            else if (line.find("滑") != std::string::npos && line.find("开始") == std::string::npos
-            && prev_type == 'n')
+            else if (line.find("按") != std::string::npos)
             {
-                std::istringstream iss(line.substr(line.find("滑") + 4));
-                iss >> time >> i;
+                std::istringstream iss(line.substr(line.find("按") + 4));
+                iss >> time >> i >> hold;
 
-                if (i == prev_i)
+                total[i]+=2;
+                int index = total[i];
+                // n1, n2, n3, null(index), null
+
+                // if index > 0, then n3 is guaranteed to exist
+                while (index > 0 && time < notes[i][index - 1]->get_time())
                 {
-                    int j = total[i]; // current index in column i
-                    notes[i][j] = new ReleaseNote(i, prev_time, time);
-                    prev_type = 'r';
-                    total[i]++;
-                    prev_i = i;
-                    prev_time = time;
+                    notes[i][index+1] = notes[i][index-1];
+                    // n1, n2, n3, null(index), n3
+                    
+                    index--;
+                    // n1, n2, n3(index), null, n3
+
+                    if (notes[i][index]->get_type() == 'r') // then n2 is guaranteed to exist
+                    {
+                        notes[i][index+1] = notes[i][index-1];
+                        // n1, n2, n3(index), n2 n3
+                        
+                        index--;
+                        // n1, n2(index), n3, n2, n3
+                    }
+                }
+
+                notes[i][index] = new Note(i, time);
+                notes[i][index + 1] = new ReleaseNote(i, time, time + hold);
+            }
+        }
+
+        // calibrate so there's blank interval between release + next note
+        // note: release note is always followed by a normal note, impossible have two ReleaseNotes in a row
+        bool score_success = true;
+
+        for (int i = 0; i < col_num; i++)
+        {
+            for (int j = 0; j < total[i] - 1; j++) // compared note to next note
+            {
+                score_success = score_success && (notes[i][j]->get_time() < notes[i][j + 1]->get_time());
+                if (notes[i][j]->get_type() == 'r')
+                {
+                    if (notes[i][j]->get_time() + min_interval > notes[i][j + 1]->get_time())
+                    {
+                        notes[i][j]->set_time(notes[i][j + 1]->get_time() - min_interval);
+                        printf("note[%d][%d] caliberated \n", i, j);
+                    }
                 }
             }
+        }
+
+        if (!score_success)
+        {
+            printf("score not in chronological order\n");
         }
     }
 
@@ -189,13 +238,13 @@ public:
                     {
                         int prev = notes[i][j - 1]->get_state();
                         notes[i][j]->update_state_without_event(current_time, prev);
-                        notes[i][j]->update_position(current_time,prev);
+                        notes[i][j]->update_position(current_time, prev);
                     }
                     else
                     {
                         notes[i][j]->update_state_without_event(current_time);
                         notes[i][j]->update_position(current_time);
-                    }   
+                    }
                 }
                 // printf("updated state according to time and position\n");
             }
@@ -231,16 +280,24 @@ public:
     }
 
     // before entering this, it's been checked that timer is started
-    void handle_event(Uint32 current_time, SDL_Event& event)
+    void handle_event(Uint32 current_time, SDL_Event &event)
     {
         int i;
         // event is guaranteed to be one of these four keys
         switch (event.key.keysym.sym)
         {
-            case SDLK_d: i = 0; break;
-            case SDLK_f: i = 1; break;
-            case SDLK_j: i = 2; break;
-            case SDLK_k: i = 3; break;
+        case SDLK_d:
+            i = 0;
+            break;
+        case SDLK_f:
+            i = 1;
+            break;
+        case SDLK_j:
+            i = 2;
+            break;
+        case SDLK_k:
+            i = 3;
+            break;
         }
 
         if (head[i] < total[i]) // if head index is valid
@@ -280,7 +337,7 @@ public:
                     if (notes[i][j]->get_type() == 'r') // if type ReleaseNote
                     {
                         int prev = notes[i][j - 1]->get_state();
-                        notes[i][j]->render_block(renderer,prev);
+                        notes[i][j]->render_block(renderer, prev);
                     }
                 }
             }

@@ -1,6 +1,11 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
+//files
+std::string music_file = "calorie.mp3";
+std::string score_file = "calorie_ending.txt";
+const bool print_score = true;
+
 // window resolution
 const int SCREEN_WIDTH = 400;
 const int SCREEN_HEIGHT = 600;
@@ -33,7 +38,9 @@ const int bd_thickness = 4;
 
 
 // notes
-const int max_notes = 6;
+const int total_notes_per_column_upper_limit = 2000;
+
+const int max_notes = 16;
 const int notes_r = 0;
 const int notes_g = 0;
 const int notes_b = 0;
@@ -57,7 +64,6 @@ const Uint32 bad_range = 300;
 const Uint32 points_array[3] = {0,200,500};
 // const Uint32 range_array[3] = {300,200,100};
 
-
 // note states
 const int irrelevent = -2;
 const int existing = -1;
@@ -70,4 +76,5 @@ const std::string font_name = "lazy.ttf";
 const int regular_font_size = 22;
 const int big_font_size = 50;
 
+const Uint32 min_interval = 100;
 #endif

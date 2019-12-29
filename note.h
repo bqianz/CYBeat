@@ -113,6 +113,10 @@ public:
 
     char get_type() { return type; }
 
+    Uint32 get_time() {return hit;}
+
+    void set_time(Uint32 given_time) {hit = given_time;}
+
     virtual void render_block(SDL_Renderer *renderer, int prev = irrelevent){}
 };
 
@@ -136,7 +140,7 @@ public:
         }
         else
         {
-            printf("PressNote initialization error: given press time >= given release time");
+            printf("PressNote initialization error: given press time >= given release time\n");
         }
     }
 
@@ -160,14 +164,16 @@ public:
             }
             
             // make rectangle cut off at goal line
-
-            if(rect_block.y > goal_height)
+            if(prev > miss)
             {
-                rect_block.h = 0;
-            }
-            else if(rect_block.y + rect_block.h > goal_height)
-            {
-                rect_block.h = goal_height - rect_block.y;
+                if(rect_block.y > goal_height)
+                {
+                    rect_block.h = 0;
+                }
+                else if(rect_block.y + rect_block.h > goal_height)
+                {
+                    rect_block.h = goal_height - rect_block.y;
+                }
             }
             
         }

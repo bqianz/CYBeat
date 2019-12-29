@@ -273,7 +273,7 @@ void load_buttons(){
 void load_audio()
 {
 	bool success = true;
-	calorie = Mix_LoadMUS( (getResourcePath() + "calorie.mp3").c_str() );
+	calorie = Mix_LoadMUS( (getResourcePath() + music_file).c_str() );
 	if( calorie == NULL )
     {
         printf( "Failed to load beat music! SDL_mixer Error: %s\n", Mix_GetError() );
@@ -467,7 +467,8 @@ int main(int, char**)
 							}
 							else // if timer is stopped
 							{
-								score = new Score(getResourcePath() + "calorie.txt");
+								score = new Score(getResourcePath() + score_file);
+								if(print_score) {score->print();}
 								timer.start();
 								Mix_PlayMusic( calorie, -1 );
 							}
