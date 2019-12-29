@@ -115,7 +115,12 @@ public:
 
     Uint32 get_time() {return hit;}
 
-    void set_time(Uint32 given_time) {hit = given_time;}
+    virtual void set_time(Uint32 given_time)
+    {
+        hit = given_time;
+        takeoff = hit - goal_height / speed;
+        finish = takeoff + SCREEN_HEIGHT / speed;
+    }
 
     virtual void render_block(SDL_Renderer *renderer, int prev = irrelevent){}
 };
@@ -124,24 +129,33 @@ class ReleaseNote : public Note
 {
 private:
     SDL_Rect rect_block;
+    Uint32 press;
     int original_height;
 
+
 public:
-    ReleaseNote(int col_num, Uint32 given_press_hit, Uint32 given_release_hit, float given_speed = 0.5)
-        : Note(col_num, given_release_hit, given_speed)
+    ReleaseNote(int col_num, Uint32 given_press, Uint32 given_release, float given_speed = 0.5)
+        : Note(col_num, given_release, given_speed)
     {
         type = 'r'; // r for release
-        if (given_press_hit < given_release_hit)
+        if (given_press < given_release)
         {
             rect_block.x = col_num * col_width;
             rect_block.w = col_width - bd_thickness;
 
-            original_height = speed * (given_release_hit - given_press_hit);
+            press = given_press;
+            original_height = speed * (given_release - given_press);
         }
         else
         {
-            printf("PressNote initialization error: given press time >= given release time\n");
+            printf("ReleaseNote initialization error: pres >= release\n");
         }
+    }
+
+    void set_time(Uint32 given_time)
+    {
+        Note::set_time(given_time);
+        original_height = speed * (given_time - press);
     }
 
     void update_position(Uint32 current_time, int prev = irrelevent)
@@ -152,7 +166,7 @@ public:
         //update block rect
         if(state!=miss && prev > irrelevent)
         {
-            if(current_time < takeoff)
+            if(current_time < takeoff) // block cut off from the top
             {
                 rect_block.y = 0;
                 rect_block.h = original_height - (takeoff-current_time) * speed;

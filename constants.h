@@ -5,6 +5,7 @@
 std::string music_file = "calorie.mp3";
 std::string score_file = "calorie_ending.txt";
 const bool print_score = true;
+const bool show_time = true;
 
 // window resolution
 const int SCREEN_WIDTH = 400;
