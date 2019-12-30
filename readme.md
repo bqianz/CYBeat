@@ -2,7 +2,7 @@
 
 A desktop rhythm game, written using Simple DirectMedia Layer API for C++.
 
-The project began as part of the 2019 Yang Chao Yue fans programming competition.
+The project began as part of the 2019 #杨超越杯编程大赛#.
 
 ## Installation
 
