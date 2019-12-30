@@ -32,7 +32,7 @@ public:
         takeoff = hit - goal_height / speed;
         finish = takeoff + SCREEN_HEIGHT / speed;
 
-        rect.x = col_num * col_width;
+        rect.x = col_num * col_width + bd_thickness/2;
         rect.y = 0;
         rect.w = col_width - bd_thickness;
         rect.h = notes_thickness;
@@ -140,8 +140,8 @@ public:
         type = 'r'; // r for release
         if (given_press < given_release)
         {
-            rect_block.x = col_num * col_width;
-            rect_block.w = col_width - bd_thickness;
+            rect_block.x = rect.x;
+            rect_block.w = rect.w;
 
             press = given_press;
             original_height = speed * (given_release - given_press);
@@ -186,7 +186,7 @@ public:
                 }
                 else if(rect_block.y + rect_block.h > goal_height)
                 {
-                    rect_block.h = goal_height - rect_block.y;
+                    rect_block.h = goal_height - rect_block.y + goal_thickness/2;
                 }
             }
             

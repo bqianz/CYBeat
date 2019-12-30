@@ -3,9 +3,9 @@
 
 //files
 std::string music_file = "calorie.mp3";
-std::string score_file = "calorie_ending.txt";
-const bool print_score = true;
-const bool show_time = true;
+std::string score_file = "calorie.txt";
+const bool print_score = false;
+const bool show_time = false;
 
 // window resolution
 const int SCREEN_WIDTH = 400;
@@ -22,19 +22,8 @@ const int bg_g = 204;
 const int bg_b = 255;
 const int bg_a = 255;
 
-// goal_line
-const int goal_r =255;
-const int goal_g =255;
-const int goal_b =255;
-const int goal_a =255;
-const int goal_height = SCREEN_HEIGHT - col_width;
-const int goal_thickness = 10;
-
 // other lines
-const int bd_r = 192;
-const int bd_g = 165;
-const int bd_b = 192;
-const int bd_a = 255;
+const int bd[4] = {192, 165, 192, 255};
 const int bd_thickness = 4;
 
 
@@ -73,9 +62,16 @@ const int good = 1;
 const int perfect = 2;
 
 // font
-const std::string font_name = "lazy.ttf";
+const std::string font_name = "ocraextended.ttf";
 const int regular_font_size = 22;
 const int big_font_size = 50;
 
 const Uint32 min_interval = 100;
+
+// goal_line
+
+const int goal[4] = {162, 120, 255,255};
+const int goal_thickness = notes_thickness;
+const int goal_height = SCREEN_HEIGHT - col_width - goal_thickness/2;
+
 #endif

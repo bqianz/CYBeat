@@ -29,16 +29,11 @@ SDL_Rect goal_rect;
 SDL_Rect vt[line_num];
 
 // button texture
-SDL_Texture *bt_images[col_num];
+SDL_Texture *bt_pressed[col_num];
+SDL_Texture *bt_image;
 
 // button rectangles
 SDL_Rect bt_rect[col_num];
-
-// short press button texture
-SDL_Texture *short_images[col_num];
-
-// short press button rectangles
-SDL_Rect short_rect[col_num];
 
 //Globally used font
 TTF_Font *font = NULL;
@@ -52,8 +47,10 @@ LTexture timeTexture;
 LTexture pointsTexture;
 LTexture feedbackTextures[3];
 LTexture comboTexture;
+LTexture fullcomboTexture;
 LTexture promptTextures[2];
 LTexture promptKeysTextures[4];
+LTexture pausedTexture;
 
 //The application timer
 LTimer timer;
@@ -61,6 +58,7 @@ LTimer timer;
 // like iostreams but instead of writing to the console, we can read and write to string in memory
 std::stringstream timeio;
 std::stringstream pointsio;
+std::stringstream comboio;
 
 Uint32 current_time;
 
@@ -182,9 +180,6 @@ bool init()
 			}
 			else
 			{
-				// initialize renderer colour
-				SDL_SetRenderDrawColor(renderer, bd_r, bd_g, bd_b, bd_a);
-
 				//Initialize PNG loading
 				int imgFlags = IMG_INIT_PNG;
 				if (!(IMG_Init(imgFlags) & imgFlags))
@@ -235,50 +230,23 @@ void load_goal_line()
 
 void load_buttons()
 {
-	// button images
 	const std::string resPath = getResourcePath();
-	// std:: string resPath = "res\\YCY\\";
-	for (int i = 0; i < col_num; i++)
-	{
-		bt_images[i] = loadTexture(resPath + "button" + std::to_string(i) + ".png", renderer);
-		if (bt_images[i] == nullptr)
-		{
-			cleanup(bt_images[i], renderer, window);
-			IMG_Quit();
-			SDL_Quit();
-			// return 1;
-		}
-	}
 
 	// button rectangles
 	for (int i = 0; i < col_num; i++)
 	{
-		bt_rect[i].x = i * col_width + bd_thickness / 2;
-		bt_rect[i].y = goal_height + bd_thickness / 2;
-		bt_rect[i].w = col_width - bd_thickness;
+		bt_rect[i].x = i * col_width;
+		bt_rect[i].y = SCREEN_HEIGHT - col_width;
+		bt_rect[i].w = col_width;
 		bt_rect[i].h = bt_rect[i].w;
 	}
 
-	// short press button images
-	for (int i = 0; i < col_num; i++)
-	{
-		short_images[i] = loadTexture(resPath + "short" + std::to_string(i) + ".png", renderer);
-		if (short_images[i] == nullptr)
-		{
-			cleanup(bt_images[i], renderer, window);
-			IMG_Quit();
-			SDL_Quit();
-			// return 1;
-		}
-	}
+	bt_image = loadTexture(resPath + "base.png", renderer);
 
-	// short press button rectangles
+	// pressed button images
 	for (int i = 0; i < col_num; i++)
 	{
-		short_rect[i].x = i * col_width;
-		short_rect[i].y = goal_height;
-		short_rect[i].w = col_width;
-		short_rect[i].h = short_rect[i].w;
+		bt_pressed[i] = loadTexture(resPath + "pressed" + std::to_string(i) + ".png", renderer);
 	}
 }
 
@@ -349,6 +317,16 @@ bool load_font()
 			success = false;
 		}
 
+		if (!fullcomboTexture.loadFromRenderedText("Full Combo", textColor, font_big))
+		{
+			printf("Unable to render Full Combo texture!\n");
+			success = false;
+		}
+
+		if(!pausedTexture.loadFromRenderedText("Paused", textColor, font_big))
+		{
+			printf("Unable to render Paused texture\n");
+		}
 	}
 
 	return success;
@@ -364,12 +342,14 @@ void close()
 		feedbackTextures[i].free();
 	}
 	comboTexture.free();
+	fullcomboTexture.free();
 	promptTextures[0].free();
 	promptTextures[1].free();
 	for (int i = 0; i < col_num; i++)
 	{
 		promptKeysTextures[i].free();
 	}
+	pausedTexture.free();
 
 	//Free global font
 	TTF_CloseFont(font);
@@ -383,9 +363,9 @@ void close()
 	// don't have to destory rectangles i think? only textures
 	for (int i = 0; i < col_num; i++)
 	{
-		cleanup(bt_images[i]);
-		cleanup(short_images[i]);
+		cleanup(bt_pressed[i]);
 	}
+	cleanup(bt_image);
 
 	Mix_FreeMusic(calorie);
 	calorie = NULL;
@@ -523,8 +503,37 @@ int main(int, char **)
 			SDL_SetRenderDrawColor(renderer, bg_r, bg_g, bg_b, bg_a);
 			SDL_RenderClear(renderer); // encouraged for code reusability
 
-			// other lines
-			SDL_SetRenderDrawColor(renderer, bd_r, bd_g, bd_b, bd_a);
+			// buttons
+			const Uint8 *currentKeyStates = SDL_GetKeyboardState(NULL);
+			// arguments gets the number of keys available?
+
+			const int key_indices[4] = {SDL_SCANCODE_D, SDL_SCANCODE_F, SDL_SCANCODE_J, SDL_SCANCODE_K};
+
+			for (int i = 0; i < col_num; i++)
+			{
+				if (currentKeyStates[key_indices[i]])
+				{
+					renderTexture(bt_pressed[i], renderer, bt_rect[i]);
+				}
+				else
+				{
+					renderTexture(bt_image, renderer, bt_rect[i]);
+				}
+			}
+
+			// goal line
+			SDL_SetRenderDrawColor(renderer, goal[0], goal[1], goal[2], goal[3]);
+			if (SDL_RenderFillRect(renderer, &goal_rect))
+			{
+				logSDLError(std::cout, "RenderFillRect goal_rect");
+				cleanup(window, renderer);
+				SDL_Quit();
+				IMG_Quit();
+				return 1;
+			}
+
+			// vertical lines lines
+			SDL_SetRenderDrawColor(renderer, bd[0], bd[1], bd[2], bd[3]);
 			for (int i = 0; i < line_num; i++)
 			{
 				if (SDL_RenderFillRect(renderer, &vt[i]))
@@ -537,51 +546,21 @@ int main(int, char **)
 				}
 			}
 
-			// goal line
-			// SDL_SetRenderDrawColor(renderer, bd_r, goal_g, goal_b, goal_a);
-			if (SDL_RenderFillRect(renderer, &goal_rect))
-			{
-				logSDLError(std::cout, "RenderFillRect goal_rect");
-				cleanup(window, renderer);
-				SDL_Quit();
-				IMG_Quit();
-				return 1;
-			}
-
-			// buttons
-			const Uint8 *currentKeyStates = SDL_GetKeyboardState(NULL);
-			// arguments gets the number of keys available?
-
-			const int key_indices[4] = {SDL_SCANCODE_D, SDL_SCANCODE_F, SDL_SCANCODE_J, SDL_SCANCODE_K};
-
-			for (int i = 0; i < col_num; i++)
-			{
-				if (currentKeyStates[key_indices[i]])
-				{
-					renderTexture(short_images[i], renderer, short_rect[i]);
-				}
-				else
-				{
-					renderTexture(bt_images[i], renderer, bt_rect[i]);
-				}
-			}
-
 			// score
 			if (timer.isStarted())
 			{
 				score->render(current_time, renderer);
+
 				pointsio.str("");
 				pointsio << "Points :" << score->get_points();
 				if (pointsTexture.loadFromRenderedText(pointsio.str().c_str(), textColor, font))
 				{
-					pointsTexture.render("top center", renderer);
+					pointsTexture.render(renderer, "top center", col_width+goal_thickness);
 				}
 				else
 				{
 					printf("Unable to render points texture!\n");
 				}
-
-				
 
 				int feedback = score->get_feedback();
 				if (feedback > existing && feedback <= perfect)
@@ -589,25 +568,50 @@ int main(int, char **)
 					int temp = 255 * (1 - (current_time - score->get_feedback_start_time()) / 500.f); // feedback fade duration 500
 					int alpha = std::max(0, temp);
 					feedbackTextures[feedback].setAlpha(alpha);
-					feedbackTextures[feedback].render("center", renderer);
+					feedbackTextures[feedback].render(renderer, "center2", col_width+goal_thickness);
+
+					if (score->get_combo() > 2)
+					{
+						comboio.str("");
+						comboio << score->get_combo() << " combo";
+						if (comboTexture.loadFromRenderedText(comboio.str().c_str(), textColor, font_big))
+						{
+							comboTexture.setAlpha(alpha);
+							comboTexture.render(renderer, "center1", col_width+goal_thickness);
+						}
+						else
+						{
+							printf("Unable to render combo texture!\n");
+						}
+					}
 				}
 
+				if (score->get_full_combo() && current_time > score->get_finish_time())
+				{
+					Uint32 display_begin = score->get_finish_time() + 1000;
+					int temp = 255 * (1 - (current_time - display_begin) / 3000.f); // fade duration 2000
+					fullcomboTexture.setAlpha(std::max(0, temp));
+					fullcomboTexture.render(renderer, "center", col_width+goal_thickness);
+				}
+				
+				if (timer.isPaused())
+				{
+					pausedTexture.render(renderer, "quater from top",  col_width+goal_thickness);
+				}
 			}
+			
 			else // stop screen rendering
 			{
-				// S, P controls
-				int vertical_margin = 10;
-				int total_height = promptTextures[0].getHeight() + promptTextures[1].getHeight() + vertical_margin;
-				int top_margin = (SCREEN_HEIGHT - total_height) / 2;
-				promptTextures[0].render((SCREEN_WIDTH - promptTextures[0].getWidth()) / 2, top_margin, renderer);
-				promptTextures[1].render((SCREEN_WIDTH - promptTextures[1].getWidth()) / 2, top_margin + vertical_margin + promptTextures[0].getHeight(), renderer);
+				// start, pause prompts
+				promptTextures[0].render(renderer, "center1", col_width+goal_thickness);
+				promptTextures[1].render(renderer, "center2", col_width+goal_thickness);
 
-				// hit buttons
+				// button prompts
 				for (int i = 0; i < col_num; i++)
 				{
 					int left_margin = (col_width - promptKeysTextures[i].getWidth()) / 2;
 					int top_margin = (col_width - promptKeysTextures[i].getHeight()) / 2;
-					promptKeysTextures[i].render(i * col_width + left_margin, goal_height + top_margin, renderer);
+					promptKeysTextures[i].render(i * col_width + left_margin, SCREEN_HEIGHT - col_width + top_margin, renderer);
 				}
 			}
 

@@ -1,14 +1,13 @@
-# CYBeat - Rhythm game for desktop
+# CYBeat
 
-The project began from the 2019 Yang Chaoyue fans programming competition. This project uses the Simple DirectMedia Layer API for C++.
+A desktop rhythm game, written using Simple DirectMedia Layer API for C++.
+
+The project began as part of the 2019 Yang Chao Yue fans programming competition.
 
 ## Installation
-Download everything and run main.exe, or download only main.exe, res file folder and all .dll files.
 
-## Controls
-Press S to start or stop, P to pause or unpause. Press D,F,J,K to hit notes in the four columns respetively.
+Currently only for windows: download and extract CYBeat_1.0_win32.rar, open main.exe from its folder.
 
-## Progress as of December 2019
-Multiple notes sliding and taking hits, score-keeping.
+## First Version
 
-![buttons demonstration](https://github.com/bqianz/CYBeat/blob/master/progress_dec_2019.gif)
+[![demo](https://img.youtube.com/vi/MbE8g2Qp5HU/0.jpg)](https://www.youtube.com/watch?v=MbE8g2Qp5HU)

@@ -68,15 +68,27 @@ class LTexture
 			SDL_RenderCopy( renderer, mTexture, NULL, &renderQuad );
 		}
 
-		void render(std::string position, SDL_Renderer* renderer)
+		void render(SDL_Renderer* renderer, std::string position = "center", int bottom_margin = 0)
 		{
 			if(position == "center")
 			{
-				render((SCREEN_WIDTH - mWidth)/2, (SCREEN_HEIGHT - mHeight)/2, renderer);
+				render((SCREEN_WIDTH - mWidth)/2, (SCREEN_HEIGHT - bottom_margin - mHeight)/2, renderer);
 			}
-			if(position == "top center")
+			else if(position == "top center")
 			{
-				render((SCREEN_WIDTH - mWidth)/2,0, renderer);
+				render((SCREEN_WIDTH - mWidth)/2, 0, renderer);
+			}
+			else if(position == "center1")
+			{
+				render((SCREEN_WIDTH - mWidth)/2, (SCREEN_HEIGHT-bottom_margin)/2 - mHeight, renderer);
+			}
+			else if (position == "center2")
+			{
+				render((SCREEN_WIDTH - mWidth)/2, (SCREEN_HEIGHT-bottom_margin)/2, renderer);
+			}
+			else if (position == "quater from top")
+			{
+				render((SCREEN_WIDTH - mWidth)/2, (SCREEN_HEIGHT - bottom_margin)/4 - mHeight/2, renderer);
 			}
 		}
 

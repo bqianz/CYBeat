@@ -29,6 +29,10 @@ private:
 
     int combo = 0;
 
+    bool full_combo = true;
+
+    Uint32 finish_time = 2400000; // 4minutes
+
 public:
     //Initialize sample score
     Score()
@@ -55,6 +59,7 @@ public:
             }
             // printf("instance of score created\n");
         }
+        finish_time = calculate_finish_time();
     }
 
     // constructor to test simple long note
@@ -68,6 +73,7 @@ public:
             notes[0][0] = new Note(0, 2000);
             notes[0][1] = new ReleaseNote(0, 2000, 4000);
         }
+        finish_time = calculate_finish_time();
     }
 
     Score(std::string filepath)
@@ -99,103 +105,115 @@ public:
         // infile.seekg(0, std::ios::beg);
 
         // make arrays of given sizes
-        for (int i = 0; i < col_num; i++)
-        {
-            notes[i] = new Note *[total_notes_per_column_upper_limit]();
-        }
 
-        while (std::getline(infile, line))
+        if (infile.is_open())
         {
-            // if single note or pressing, create regular note
-            if (line.find("点") != std::string::npos)
+            for (int i = 0; i < col_num; i++)
             {
-                std::istringstream iss(line.substr(line.find("点") + 4));
-                iss >> time >> i;
-
-                int index = total[i];
-                // n1, n2, n3, null (index)
-
-                // if index > 0, then n3 is guranteed to exist
-                while (index > 0 && time < notes[i][index - 1]->get_time())
-                {
-                    notes[i][index] = notes[i][index - 1]; // address of a note
-                    // n1, n2, n3, n3(index)
-
-                    index--;
-                    // n1, n2, n3(index), n3
-
-                    if (notes[i][index]->get_type() == 'r') // then n2 is guaranteed to exist
-                    {
-                        notes[i][index] = notes[i][index - 1];
-                        // n1, n2, n2(index), n3
-
-                        index--;
-                        // n1, n2(index), n2, n3
-                    }
-                }
-
-                notes[i][index] = new Note(i, time);
-                total[i]++;
+                notes[i] = new Note *[total_notes_per_column_upper_limit]();
             }
 
-            else if (line.find("按") != std::string::npos)
+            while (std::getline(infile, line))
             {
-                std::istringstream iss(line.substr(line.find("按") + 4));
-                iss >> time >> i >> hold;
-
-                int index = total[i];
-                // n1, n2, n3, null(index), null
-
-                // if index > 0, then n3 is guaranteed to exist
-                while (index > 0 && time < notes[i][index - 1]->get_time())
+                // if single note or pressing, create regular note
+                if (line.find("点") != std::string::npos)
                 {
-                    notes[i][index + 1] = notes[i][index - 1];
-                    // n1, n2, n3, null(index), n3
+                    std::istringstream iss(line.substr(line.find("点") + 4));
+                    iss >> time >> i;
 
-                    index--;
-                    // n1, n2, n3(index), null, n3
+                    int index = total[i];
+                    // n1, n2, n3, null (index)
 
-                    if (notes[i][index]->get_type() == 'r') // then n2 is guaranteed to exist
+                    // if index > 0, then n3 is guranteed to exist
+                    while (index > 0 && time < notes[i][index - 1]->get_time())
+                    {
+                        notes[i][index] = notes[i][index - 1]; // address of a note
+                        // n1, n2, n3, n3(index)
+
+                        index--;
+                        // n1, n2, n3(index), n3
+
+                        if (notes[i][index]->get_type() == 'r') // then n2 is guaranteed to exist
+                        {
+                            notes[i][index] = notes[i][index - 1];
+                            // n1, n2, n2(index), n3
+
+                            index--;
+                            // n1, n2(index), n2, n3
+                        }
+                    }
+
+                    notes[i][index] = new Note(i, time);
+                    total[i]++;
+                }
+
+                else if (line.find("按") != std::string::npos)
+                {
+                    std::istringstream iss(line.substr(line.find("按") + 4));
+                    iss >> time >> i >> hold;
+
+                    int index = total[i];
+                    // n1, n2, n3, null(index), null
+
+                    // if index > 0, then n3 is guaranteed to exist
+                    while (index > 0 && time < notes[i][index - 1]->get_time())
                     {
                         notes[i][index + 1] = notes[i][index - 1];
-                        // n1, n2, n3(index), n2 n3
+                        // n1, n2, n3, null(index), n3
 
                         index--;
-                        // n1, n2(index), n3, n2, n3
+                        // n1, n2, n3(index), null, n3
+
+                        if (notes[i][index]->get_type() == 'r') // then n2 is guaranteed to exist
+                        {
+                            notes[i][index + 1] = notes[i][index - 1];
+                            // n1, n2, n3(index), n2 n3
+
+                            index--;
+                            // n1, n2(index), n3, n2, n3
+                        }
                     }
+
+                    notes[i][index] = new Note(i, time);
+                    notes[i][index + 1] = new ReleaseNote(i, time, time + hold);
+                    total[i] += 2;
                 }
-
-                notes[i][index] = new Note(i, time);
-                notes[i][index + 1] = new ReleaseNote(i, time, time+hold);
-                total[i] += 2;
             }
-        }
 
-        // calibrate so there's blank interval between release + next note
-        // note: release note is always followed by a normal note, impossible have two ReleaseNotes in a row
+            // calibrate so there's blank interval between release + next note
+            // note: release note is always followed by a normal note, impossible have two ReleaseNotes in a row
 
-        for (int i = 0; i < col_num; i++)
-        {
-            for (int j = 0; j < total[i] - 1; j++) // compared note to next note
+            for (int i = 0; i < col_num; i++)
             {
-                if (notes[i][j]->get_type() == 'r')
+                for (int j = 0; j < total[i] - 1; j++) // compared note to next note
                 {
-                    if (notes[i][j]->get_time() + min_interval > notes[i][j + 1]->get_time())
+                    if (notes[i][j]->get_type() == 'r')
                     {
-                        delete notes[i][j];
-                        notes[i][j] = new ReleaseNote(i, notes[i][j-1]->get_time(), notes[i][j + 1]->get_time()-min_interval);
-                        printf("note[%d][%d] caliberated \n", i, j);
+                        if (notes[i][j]->get_time() + min_interval > notes[i][j + 1]->get_time())
+                        {
+                            delete notes[i][j];
+                            notes[i][j] = new ReleaseNote(i, notes[i][j - 1]->get_time(), notes[i][j + 1]->get_time() - min_interval);
+                            // printf("note[%d][%d] caliberated \n", i, j);
+                        }
+                    }
+
+                    if (!(notes[i][j]->get_time() < notes[i][j + 1]->get_time()))
+                    {
+                        printf("note chronological order error:\n");
+                        printf("note[%d][%d] = %d\n", i, j, notes[i][j]->get_time());
+                        printf("note[%d][%d] = %d\n\n", i, j + 1, notes[i][j + 1]->get_time());
                     }
                 }
-
-                if (!(notes[i][j]->get_time() < notes[i][j + 1]->get_time()))
-                {
-                    printf("note chronological order error:\n");
-                    printf("note[%d][%d] = %d\n", i, j, notes[i][j]->get_time());
-                    printf("note[%d][%d] = %d\n\n", i, j + 1, notes[i][j + 1]->get_time());
-                }
             }
+
+            finish_time = calculate_finish_time();
+            printf("Score created\n");
         }
+        else
+        {
+            printf("Error opening %s\n", filepath.c_str());
+        }
+        
     }
 
     ~Score()
@@ -223,6 +241,16 @@ public:
                 notes[i][j]->print();
             }
         }
+    }
+
+    Uint32 calculate_finish_time()
+    {
+        Uint32 last_note_time = 0;
+        for (int i = 0; i < col_num; i++)
+        {
+            last_note_time = std::max(notes[i][total[i] - 1]->get_time(), last_note_time);
+        }
+        return last_note_time;
     }
 
     void update_score(Uint32 current_time) // update status of notes in all columns
@@ -269,8 +297,15 @@ public:
                     head[i]++;
                     temp = std::min(temp, hs);
 
-                    if(hs == miss) {combo = 0}
-                    else {combo++;}
+                    if (hs == miss)
+                    {
+                        combo = 0;
+                        full_combo = false;
+                    }
+                    else
+                    {
+                        combo++;
+                    }
                 }
             }
         }
@@ -381,6 +416,16 @@ public:
     int get_combo()
     {
         return combo;
+    }
+
+    Uint32 get_finish_time()
+    {
+        return finish_time;
+    }
+
+    Uint32 get_full_combo()
+    {
+        return full_combo;
     }
 };
 
