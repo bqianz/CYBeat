@@ -17,4 +17,4 @@ Used __Lazy Foo' Productions__ LTimer and LTexture classes from their [SDL tutor
 
 Used __Will Usher__'s meta functions such as for error logging and requiring file path from their [SDL tutorials](https://www.willusher.io/pages/sdl2/).
 
-Thanks to Bilibili user しろ妖夢 for permission to use their self-made music score of the song "Calorie", originally made for the game 节奏大师.
+Thanks to Bilibili user しろ妖夢 for permission to use their self-made [music score](https://www.bilibili.com/video/av30005849) of the song "Calorie", originally made for the game 节奏大师.
